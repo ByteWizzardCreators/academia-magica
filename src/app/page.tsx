@@ -5,7 +5,7 @@ import Image from "next/image";
 const FEATURES = [
   {
     href: "/traductor",
-    icon: "✨",
+    img: "/images/wizard/wizard-main.png",
     title: "Traductor Mágico",
     status: "Ya disponible",
     desc: "Escribí una palabra y el mago te enseña cómo se dice en inglés con ejemplos y pronunciación.",
@@ -13,7 +13,7 @@ const FEATURES = [
   },
   {
     href: "/clases",
-    icon: "📚",
+    img: "/images/clases/clases-logo.png",
     title: "Clases",
     status: "Próximamente",
     desc: "Lecciones interactivas con IA adaptadas a tu nivel. Aprendé jugando.",
@@ -21,6 +21,7 @@ const FEATURES = [
   },
   {
     href: "/dashboard",
+    img: null,
     icon: "📊",
     title: "Mi Progreso",
     status: "Próximamente",
@@ -32,18 +33,19 @@ const FEATURES = [
 export default function LandingPage() {
   return (
     <div className="relative flex flex-col items-center">
-      {/* Hero section with background */}
-      <section className="relative flex min-h-[85vh] w-full flex-col items-center justify-center gap-8 px-4 py-20">
-        {/* Background image with soft overlay */}
-        <div className="absolute inset-0 overflow-hidden">
+      {/* HERO — full-viewport with visible background image */}
+      <section className="relative flex min-h-[85vh] w-full flex-col items-center justify-center gap-8 px-4 py-20 overflow-hidden">
+        {/* Background image — much more visible now */}
+        <div className="absolute inset-0">
           <Image
             src="/images/backgrounds/hero-bg.png"
             alt=""
             fill
-            className="object-cover opacity-30"
+            className="object-cover opacity-60"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-magic-bg/70 via-magic-bg/30 to-magic-bg" />
+          {/* Subtle dark edges for text contrast — center stays transparent */}
+          <div className="absolute inset-0 bg-gradient-to-t from-magic-bg via-transparent via-60% to-black/30" />
         </div>
 
         {/* Content */}
@@ -52,18 +54,20 @@ export default function LandingPage() {
           <Image
             src="/images/logo/logo.png"
             alt="Academia Mágica"
-            width={180}
-            height={180}
-            className="object-contain drop-shadow-lg"
+            width={200}
+            height={200}
+            className="object-contain drop-shadow-[0_0_20px_rgba(255,184,0,0.3)]"
             priority
           />
 
           <div className="max-w-2xl text-center">
-            <h1 className="text-4xl font-bold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)] sm:text-6xl">
+            <h1 className="text-5xl font-bold leading-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] sm:text-7xl">
               Aprendé inglés con{" "}
-              <span className="text-magic-gold">magia</span>
+              <span className="text-magic-gold drop-shadow-[0_0_20px_rgba(255,184,0,0.7)]">
+                magia
+              </span>
             </h1>
-            <p className="mt-4 text-lg text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.3)] sm:text-xl">
+            <p className="mt-4 text-lg text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] sm:text-xl">
               Un profesor mágico con IA para chicos de 6 a 10 años.
               <br />
               Divertido, educativo y mágico.
@@ -74,13 +78,13 @@ export default function LandingPage() {
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <a
               href="/traductor"
-              className="magic-gradient rounded-2xl px-10 py-4 text-lg font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
+              className="magic-gradient rounded-2xl px-10 py-4 text-lg font-bold text-white shadow-lg shadow-magic-purple/30 transition-all hover:scale-105 hover:shadow-xl active:scale-95"
             >
               Probar Traductor ✨
             </a>
             <a
               href="/clases"
-              className="rounded-2xl border-2 border-white/40 bg-white/10 px-10 py-4 text-lg font-bold text-white shadow-lg backdrop-blur-sm transition-all hover:border-magic-gold hover:bg-magic-gold/20 hover:scale-105 active:scale-95"
+              className="rounded-2xl border-2 border-white/50 bg-white/10 px-10 py-4 text-lg font-bold text-white shadow-lg backdrop-blur-sm transition-all hover:border-magic-gold hover:bg-magic-gold/20 hover:scale-105 active:scale-95"
             >
               Ver Clases 📚
             </a>
@@ -89,7 +93,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features / Products Section */}
-      <section className="w-full max-w-5xl px-4 pb-24 pt-16">
+      <section className="w-full max-w-5xl px-4 pb-24 pt-20">
         <div className="grid gap-8 md:grid-cols-3">
           {FEATURES.map((feature) => (
             <a
@@ -97,7 +101,18 @@ export default function LandingPage() {
               href={feature.href}
               className="magic-card flex flex-col items-center gap-4 px-6 py-8 text-center shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl"
             >
-              <span className="text-5xl">{feature.icon}</span>
+              {/* Image or emoji for the card */}
+              {feature.img ? (
+                <Image
+                  src={feature.img}
+                  alt={feature.title}
+                  width={72}
+                  height={72}
+                  className="object-contain"
+                />
+              ) : (
+                <span className="text-5xl">{feature.icon}</span>
+              )}
 
               <div>
                 <h3 className="text-xl font-bold text-magic-purple">

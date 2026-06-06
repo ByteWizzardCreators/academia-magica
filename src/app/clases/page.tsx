@@ -1,11 +1,18 @@
 "use client";
 
-import WizardCharacter from "@/components/wizard/WizardCharacter";
+import Image from "next/image";
 
 export default function ClasesPage() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 py-20 text-center">
-      <WizardCharacter size={120} />
+      <Image
+        src="/images/clases/clases-logo.png"
+        alt="Clases Academia Mágica"
+        width={140}
+        height={140}
+        className="object-contain drop-shadow-lg"
+        priority
+      />
       <h1 className="text-3xl font-bold text-magic-purple sm:text-5xl">
         Clases 🚧
       </h1>
