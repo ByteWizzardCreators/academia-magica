@@ -44,8 +44,8 @@ export default function LandingPage() {
             className="object-cover opacity-80"
             priority
           />
-          {/* Dark gradient top for text contrast, soft fade to page bg at bottom */}
-          <div className="absolute inset-0 bg-gradient-to-t from-magic-bg via-transparent via-50% to-black/60" />
+          {/* Dark at top for text contrast, deep purple at bottom for tone */}
+          <div className="absolute inset-0 bg-gradient-to-t from-magic-purple-dark/70 via-magic-purple/20 via-35% via-transparent via-50% to-black/60" />
           {/* Extra gold glow behind the logo */}
           <div className="absolute top-[30%] left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-magic-gold/15 blur-[120px]" />
         </div>
@@ -92,6 +92,9 @@ export default function LandingPage() {
             </a>
           </div>
         </div>
+
+        {/* Bottom fade — purple hero → page background */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-magic-bg to-transparent" />
       </section>
 
       {/* Features / Products Section */}
