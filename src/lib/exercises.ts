@@ -192,9 +192,8 @@ ${previousExercises.length > 0 ? `Previous exercises in this session (DO NOT rep
 Make it fun, magical, and appropriate for a kid. The question MUST be in Spanish.`;
 }
 
-export interface GeneratedExercise extends Exercise {
-  // AI-generated exercises have the same shape
-}
+// AI-generated exercises have the same shape as Exercise
+export type GeneratedExercise = Exercise;
 
 /** Generate ONE exercise via Groq AI */
 export async function generateAIExercise(

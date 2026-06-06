@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { getTopic } from "@/data/vocabulary";
 import type { VocabWord } from "@/data/vocabulary";
-import type { Exercise, ExerciseType } from "@/types/exercises";
+import type { Exercise } from "@/types/exercises";
 
 // ─── Progress helpers (localStorage until auth) ───
 
@@ -16,17 +16,33 @@ interface TopicProgress {
   streak: number;
 }
 
-function loadProgress(): Record<string, TopicProgress> {
+function loadTopicProgress(topicId: string): { level: number; score: number } {
+  if (typeof window === "undefined") return { level: 1, score: 0 };
+  try {
+    const saved = localStorage.getItem("magic_progress");
+    const prog = saved ? JSON.parse(saved) : {};
+    if (prog[topicId]) {
+      return { level: prog[topicId].level, score: prog[topicId].correct };
+    }
+  } catch {
+    // ignore
+  }
+  return { level: 1, score: 0 };
+}
+
+function saveProgress(progress: Record<string, TopicProgress>) {
+  localStorage.setItem("magic_progress", JSON.stringify(progress));
+}
+
+/** Load full progress object (for saving/merging) */
+function getFullProgress(): Record<string, TopicProgress> {
+  if (typeof window === "undefined") return {};
   try {
     const saved = localStorage.getItem("magic_progress");
     return saved ? JSON.parse(saved) : {};
   } catch {
     return {};
   }
-}
-
-function saveProgress(progress: Record<string, TopicProgress>) {
-  localStorage.setItem("magic_progress", JSON.stringify(progress));
 }
 
 // ─── Audio helper ───
@@ -55,9 +71,14 @@ export default function TopicPage() {
   const slug = params.slug as string;
   const topic = getTopic(slug);
 
+  // Load initial progress from localStorage (lazy init — runs once)
+  const [initialLevel, initialScore] = topic
+    ? [loadTopicProgress(topic.id).level, loadTopicProgress(topic.id).score]
+    : [1, 0];
+
   // Mode
   const [mode, setMode] = useState<Mode>("study");
-  const [level, setLevel] = useState(1);
+  const [level, setLevel] = useState(initialLevel);
 
   // Exercises
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -65,21 +86,11 @@ export default function TopicPage() {
   const [answer, setAnswer] = useState("");
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(initialScore);
   const [streak, setStreak] = useState(0);
   const [leveledUp, setLeveledUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Load progress on mount
-  useEffect(() => {
-    if (!topic) return;
-    const prog = loadProgress();
-    if (prog[topic.id]) {
-      setLevel(prog[topic.id].level);
-      setScore(prog[topic.id].correct);
-    }
-  }, [topic]);
 
   // Load voices for speech
   useEffect(() => {
@@ -170,7 +181,7 @@ export default function TopicPage() {
     setLeveledUp(didLevelUp);
 
     // Save progress
-    const prog = loadProgress();
+    const prog = getFullProgress();
     prog[topic!.id] = {
       slug: topic!.id,
       correct: (prog[topic!.id]?.correct ?? 0) + correctCount,

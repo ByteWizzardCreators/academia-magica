@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { TOPICS } from "@/data/vocabulary";
 
 interface TopicProgress {
@@ -11,18 +11,18 @@ interface TopicProgress {
   level: number;
 }
 
-export default function ClasesPage() {
-  const [progress, setProgress] = useState<Record<string, TopicProgress>>({});
+function loadProgress(): Record<string, TopicProgress> {
+  if (typeof window === "undefined") return {};
+  try {
+    const saved = localStorage.getItem("magic_progress");
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+}
 
-  // Load progress from localStorage (until auth is available)
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("magic_progress");
-      if (saved) setProgress(JSON.parse(saved));
-    } catch {
-      // Ignore parse errors
-    }
-  }, []);
+export default function ClasesPage() {
+  const [progress] = useState<Record<string, TopicProgress>>(loadProgress);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">

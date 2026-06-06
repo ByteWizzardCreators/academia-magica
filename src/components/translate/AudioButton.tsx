@@ -14,6 +14,19 @@ export default function AudioButton({ text, audioUrl, label, size = "sm", lang =
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const speakWithWebSpeech = (txt: string, language: string) => {
+    if (!window.speechSynthesis) {
+      setPlaying(false);
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(txt);
+    utterance.lang = language;
+    utterance.rate = 0.9;
+    utterance.onend = () => setPlaying(false);
+    utterance.onerror = () => setPlaying(false);
+    window.speechSynthesis.speak(utterance);
+  };
+
   const play = useCallback(() => {
     if (playing) return;
     setPlaying(true);
@@ -35,19 +48,6 @@ export default function AudioButton({ text, audioUrl, label, size = "sm", lang =
       speakWithWebSpeech(text, lang);
     }
   }, [text, audioUrl, playing, lang]);
-
-  const speakWithWebSpeech = (txt: string, language: string) => {
-    if (!window.speechSynthesis) {
-      setPlaying(false);
-      return;
-    }
-    const utterance = new SpeechSynthesisUtterance(txt);
-    utterance.lang = language;
-    utterance.rate = 0.9;
-    utterance.onend = () => setPlaying(false);
-    utterance.onerror = () => setPlaying(false);
-    window.speechSynthesis.speak(utterance);
-  };
 
   const sizeClass = size === "sm" ? "h-7 w-7" : "h-9 w-9";
 

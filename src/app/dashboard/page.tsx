@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { TOPICS } from "@/data/vocabulary";
 
@@ -12,27 +12,23 @@ interface TopicProgress {
   streak: number;
 }
 
-export default function DashboardPage() {
-  const [progress, setProgress] = useState<Record<string, TopicProgress>>({});
-  const [totalStreak, setTotalStreak] = useState(0);
+function loadProgress(): { progress: Record<string, TopicProgress>; maxStreak: number } {
+  if (typeof window === "undefined") return { progress: {}, maxStreak: 0 };
+  try {
+    const saved = localStorage.getItem("magic_progress");
+    const parsed = saved ? (JSON.parse(saved) as Record<string, TopicProgress>) : {};
+    const maxStreak = Object.values(parsed).reduce(
+      (max, p) => Math.max(max, p.streak || 0),
+      0,
+    );
+    return { progress: parsed, maxStreak };
+  } catch {
+    return { progress: {}, maxStreak: 0 };
+  }
+}
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("magic_progress");
-      if (saved) {
-        const parsed = JSON.parse(saved) as Record<string, TopicProgress>;
-        setProgress(parsed);
-        // Calculate highest streak across topics
-        const maxStreak = Object.values(parsed).reduce(
-          (max, p) => Math.max(max, p.streak || 0),
-          0,
-        );
-        setTotalStreak(maxStreak);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
+export default function DashboardPage() {
+  const [{ progress, maxStreak: totalStreak }] = useState(loadProgress);
 
   const hasProgress = Object.keys(progress).length > 0;
   const totalCorrect = Object.values(progress).reduce((s, p) => s + p.correct, 0);

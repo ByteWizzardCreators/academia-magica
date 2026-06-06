@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 const FEATURES = [
   {
@@ -82,12 +83,12 @@ export default function LandingPage() {
             >
               Probar Traductor ✨
             </a>
-            <a
+            <Link
               href="/clases"
               className="rounded-2xl border-2 border-white/50 bg-white/10 px-10 py-4 text-lg font-bold text-white shadow-lg backdrop-blur-sm transition-all hover:border-magic-gold hover:bg-magic-gold/20 hover:scale-105 active:scale-95"
             >
               Ver Clases 📚
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -100,7 +101,7 @@ export default function LandingPage() {
         <section className="mx-auto w-full max-w-5xl px-4 pb-24 pt-20">
           <div className="grid gap-8 md:grid-cols-3">
           {FEATURES.map((feature) => (
-            <a
+            <Link
               key={feature.title}
               href={feature.href}
               className="magic-card flex flex-col items-center gap-4 px-6 py-8 text-center shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl"
@@ -140,7 +141,7 @@ export default function LandingPage() {
               <span className="mt-auto text-sm font-bold text-magic-gold transition-all group-hover:translate-x-1">
                 {feature.cta}
               </span>
-            </a>
+            </Link>
           ))}
         </div>
       </section>
