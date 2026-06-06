@@ -33,41 +33,43 @@ const FEATURES = [
 export default function LandingPage() {
   return (
     <div className="relative flex flex-col items-center">
-      {/* HERO — full-viewport with visible background image */}
-      <section className="relative flex min-h-[85vh] w-full flex-col items-center justify-center gap-8 px-4 py-20 overflow-hidden">
-        {/* Background image — much more visible now */}
+      {/* HERO — full-viewport dramatic impact */}
+      <section className="relative flex min-h-[90vh] w-full flex-col items-center justify-center gap-10 px-4 py-20 overflow-hidden">
+        {/* Background image — high impact */}
         <div className="absolute inset-0">
           <Image
             src="/images/backgrounds/hero-bg.png"
             alt=""
             fill
-            className="object-cover opacity-60"
+            className="object-cover opacity-80"
             priority
           />
-          {/* Subtle dark edges for text contrast — center stays transparent */}
-          <div className="absolute inset-0 bg-gradient-to-t from-magic-bg via-transparent via-60% to-black/30" />
+          {/* Dark gradient top for text contrast, soft fade to page bg at bottom */}
+          <div className="absolute inset-0 bg-gradient-to-t from-magic-bg via-transparent via-50% to-black/60" />
+          {/* Extra gold glow behind the logo */}
+          <div className="absolute top-[30%] left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-magic-gold/15 blur-[120px]" />
         </div>
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col items-center gap-6">
-          {/* Logo */}
+        <div className="relative z-10 flex flex-col items-center gap-8">
+          {/* Logo with stronger glow */}
           <Image
             src="/images/logo/logo.png"
             alt="Academia Mágica"
-            width={200}
-            height={200}
-            className="object-contain drop-shadow-[0_0_20px_rgba(255,184,0,0.3)]"
+            width={220}
+            height={220}
+            className="object-contain drop-shadow-[0_0_30px_rgba(255,184,0,0.4)]"
             priority
           />
 
-          <div className="max-w-2xl text-center">
-            <h1 className="text-5xl font-bold leading-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] sm:text-7xl">
+          <div className="max-w-3xl text-center">
+            <h1 className="text-6xl font-bold leading-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)] sm:text-8xl">
               Aprendé inglés con{" "}
-              <span className="text-magic-gold drop-shadow-[0_0_20px_rgba(255,184,0,0.7)]">
+              <span className="text-magic-gold drop-shadow-[0_0_30px_rgba(255,184,0,0.9)]">
                 magia
               </span>
             </h1>
-            <p className="mt-4 text-lg text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] sm:text-xl">
+            <p className="mt-6 text-xl text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] sm:text-2xl">
               Un profesor mágico con IA para chicos de 6 a 10 años.
               <br />
               Divertido, educativo y mágico.
