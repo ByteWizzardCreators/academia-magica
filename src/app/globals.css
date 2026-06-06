@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ── Academia Mágica Theme ── */
+/* Deep purple primary, warm gold accent, playful & colorful */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-magic-purple: #4A0E7E;
+  --color-magic-purple-light: #7B2DBF;
+  --color-magic-purple-dark: #2D054D;
+  --color-magic-gold: #FFB800;
+  --color-magic-gold-light: #FFD84D;
+  --color-magic-gold-dark: #CC9300;
+  --color-magic-pink: #FF6B9D;
+  --color-magic-teal: #00D4AA;
+  --color-magic-sky: #7EC8E3;
+  --color-magic-bg: #F8F0FF;
+  --color-magic-bg-alt: #EDE0FF;
+  --color-magic-card: #FFFFFF;
+  --color-magic-text: #2D054D;
+  --color-magic-text-light: #6B4F8A;
+
+  --font-sans: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ── Base styles ── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-magic-bg);
+  color: var(--color-magic-text);
+  font-family: var(--font-sans);
+}
+
+/* ── Reusable utility classes ── */
+@layer utilities {
+  .magic-gradient {
+    background: linear-gradient(135deg, var(--color-magic-purple) 0%, var(--color-magic-purple-light) 100%);
+  }
+  .magic-glow {
+    box-shadow: 0 0 20px rgba(74, 14, 126, 0.15);
+  }
+  .magic-card {
+    background: var(--color-magic-card);
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(74, 14, 126, 0.08);
+    border: 1px solid rgba(74, 14, 126, 0.06);
+  }
 }
