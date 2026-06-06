@@ -44,9 +44,7 @@ export default function LandingPage() {
             className="object-cover opacity-80"
             priority
           />
-          {/* Dark at top for text contrast, deep purple at bottom for tone */}
-          <div className="absolute inset-0 bg-gradient-to-t from-magic-purple-dark/70 via-magic-purple/20 via-35% via-transparent via-50% to-black/60" />
-          {/* Extra gold glow behind the logo */}
+          {/* Subtle gold glow behind the logo — doesn't hide the image */}
           <div className="absolute top-[30%] left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-magic-gold/15 blur-[120px]" />
         </div>
 
@@ -63,13 +61,13 @@ export default function LandingPage() {
           />
 
           <div className="max-w-3xl text-center">
-            <h1 className="text-6xl font-bold leading-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)] sm:text-8xl">
+            <h1 className="text-6xl font-bold leading-tight text-white drop-shadow-[0_6px_24px_rgba(0,0,0,0.85)] sm:text-8xl">
               Aprendé inglés con{" "}
-              <span className="text-magic-gold drop-shadow-[0_0_30px_rgba(255,184,0,0.9)]">
+              <span className="text-magic-gold drop-shadow-[0_0_40px_rgba(255,184,0,0.95)]">
                 magia
               </span>
             </h1>
-            <p className="mt-6 text-xl text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] sm:text-2xl">
+            <p className="mt-6 text-xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] sm:text-2xl">
               Un profesor mágico con IA para chicos de 6 a 10 años.
               <br />
               Divertido, educativo y mágico.
