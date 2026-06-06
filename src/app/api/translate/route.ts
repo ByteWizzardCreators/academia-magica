@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { translate } from "@/lib/groq";
+import { lookupWord } from "@/lib/dictionary";
 import { getCachedTranslation, cacheTranslation } from "@/lib/cache";
 
 export async function POST(request: NextRequest) {
@@ -21,6 +22,13 @@ export async function POST(request: NextRequest) {
 
     // Call Groq
     const result = await translate(phrase, language);
+
+    // Enrich with Free Dictionary API (native audio + phonetic)
+    const dict = await lookupWord(result.translation);
+    if (dict) {
+      result.audioUrl = dict.audioUrl;
+      result.phonetic = dict.phonetic || result.ipa;
+    }
 
     // Cache the result (fire-and-forget)
     cacheTranslation(phrase, language, result).catch(console.error);

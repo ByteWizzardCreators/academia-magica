@@ -1,3 +1,4 @@
+import AudioButton from "./AudioButton";
 import type { TranslateResponse } from "@/lib/groq";
 
 interface Props {
@@ -28,17 +29,30 @@ export default function TranslateResult({ data, loading, error }: Props) {
 
   return (
     <div className="magic-card w-full max-w-lg space-y-5 px-6 py-6">
-      {/* Translation */}
+      {/* Translation + Audio */}
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-magic-text-light">
           Traducción
         </p>
-        <p className="mt-1 text-3xl font-bold text-magic-purple">
-          {data.translation}
-        </p>
+        <div className="mt-1 flex items-center gap-2">
+          <p className="text-3xl font-bold text-magic-purple">
+            {data.translation}
+          </p>
+          <AudioButton
+            text={data.translation}
+            audioUrl={data.audioUrl}
+            label={`Escuchar "${data.translation}"`}
+            size="md"
+          />
+        </div>
         {data.ipa && (
           <p className="mt-0.5 text-sm text-magic-text-light">
             /{data.ipa}/
+          </p>
+        )}
+        {data.phonetic && data.phonetic !== data.ipa && (
+          <p className="text-xs text-magic-text-light/60">
+            Fonética nativa: {data.phonetic}
           </p>
         )}
       </div>
@@ -55,7 +69,14 @@ export default function TranslateResult({ data, loading, error }: Props) {
         <p className="text-xs font-semibold uppercase tracking-wider text-magic-text-light">
           Ejemplo
         </p>
-        <p className="mt-1 text-lg text-magic-text">{data.example}</p>
+        <div className="mt-1 flex items-start gap-2">
+          <p className="text-lg text-magic-text">{data.example}</p>
+          <AudioButton
+            text={data.example}
+            label='Escuchar ejemplo'
+            size="sm"
+          />
+        </div>
         <p className="text-sm text-magic-text-light">
           {data.exampleTranslation}
         </p>
@@ -74,9 +95,16 @@ export default function TranslateResult({ data, loading, error }: Props) {
             <p className="mt-0.5 text-xs italic text-magic-text-light">
               {def.definitionEn}
             </p>
-            <p className="mt-2 text-sm text-magic-text">
-              &ldquo;{def.example}&rdquo;
-            </p>
+            <div className="mt-2 flex items-start gap-2">
+              <p className="text-sm text-magic-text">
+                &ldquo;{def.example}&rdquo;
+              </p>
+              <AudioButton
+                text={def.example}
+                label='Escuchar ejemplo'
+                size="sm"
+              />
+            </div>
             <p className="text-xs text-magic-text-light">
               {def.exampleTranslation}
             </p>

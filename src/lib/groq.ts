@@ -17,6 +17,9 @@ export interface TranslateResponse {
     example: string;
     exampleTranslation: string;
   }>;
+  // Enriched by backend after Groq response
+  audioUrl?: string | null;
+  phonetic?: string;
 }
 
 const SYSTEM_PROMPT = `You are a fun and patient English teacher for KIDS (ages 6-10).
