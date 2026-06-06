@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import WizardCharacter from "@/components/wizard/WizardCharacter";
 import TranslateForm from "@/components/translate/TranslateForm";
 import TranslateResult from "@/components/translate/TranslateResult";
@@ -12,9 +13,21 @@ export default function Home() {
   const [error, setError] = useState("");
 
   return (
-    <div className="flex flex-col items-center px-4 py-12 sm:py-20">
+    <div className="relative flex flex-col items-center px-4 py-12 sm:py-20">
+      {/* Background image */}
+      <Image
+        src="/images/backgrounds/hero-bg.png"
+        alt=""
+        fill
+        className="pointer-events-none object-cover opacity-10"
+        priority
+        onError={(e) => {
+          (e.target as HTMLImageElement).style.display = "none";
+        }}
+      />
+
       {/* Hero Section */}
-      <section className="flex flex-col items-center gap-6 text-center">
+      <section className="relative flex flex-col items-center gap-6 text-center">
         <WizardCharacter size={140} />
 
         <h1 className="max-w-2xl text-3xl font-bold leading-tight text-magic-purple sm:text-5xl">

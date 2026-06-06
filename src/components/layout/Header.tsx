@@ -1,3 +1,6 @@
+"use client";
+
+import Image from "next/image";
 import WizardCharacter from "@/components/wizard/WizardCharacter";
 
 export default function Header() {
@@ -6,7 +9,17 @@ export default function Header() {
       <div className="mx-auto flex max-w-5xl items-center justify-between">
         {/* Logo + Title */}
         <a href="/" className="flex items-center gap-3">
-          <WizardCharacter size={48} />
+          <Image
+            src="/images/logo/logo.png"
+            alt="Academia Mágica"
+            width={36}
+            height={36}
+            className="object-contain hidden sm:block"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
+          <WizardCharacter size={40} />
           <span className="text-xl font-bold text-white drop-shadow-sm">
             Academia Mágica
           </span>
