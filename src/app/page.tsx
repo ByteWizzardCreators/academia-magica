@@ -14,20 +14,24 @@ export default function Home() {
 
   return (
     <div className="relative flex flex-col items-center px-4 py-12 sm:py-20">
-      {/* Background image */}
-      <Image
-        src="/images/backgrounds/hero-bg.png"
-        alt=""
-        fill
-        className="pointer-events-none object-cover opacity-10"
-        priority
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = "none";
-        }}
-      />
+      {/* Background image with gradient overlay */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <Image
+          src="/images/backgrounds/hero-bg.png"
+          alt=""
+          fill
+          className="object-cover opacity-25"
+          priority
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
+        />
+        {/* Gradient overlay — fades the bg at the edges so content stays readable */}
+        <div className="absolute inset-0 bg-gradient-to-b from-magic-bg/80 via-magic-bg/40 to-magic-bg" />
+      </div>
 
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center gap-6 text-center">
+      <section className="relative z-10 flex flex-col items-center gap-6 text-center">
         <WizardCharacter size={140} />
 
         <h1 className="max-w-2xl text-3xl font-bold leading-tight text-magic-purple sm:text-5xl">

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import WizardCharacter from "@/components/wizard/WizardCharacter";
 
 export default function Header() {
   return (
@@ -12,14 +11,13 @@ export default function Header() {
           <Image
             src="/images/logo/logo.png"
             alt="Academia Mágica"
-            width={36}
-            height={36}
-            className="object-contain hidden sm:block"
+            width={40}
+            height={40}
+            className="object-contain"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = "none";
             }}
           />
-          <WizardCharacter size={40} />
           <span className="text-xl font-bold text-white drop-shadow-sm">
             Academia Mágica
           </span>
