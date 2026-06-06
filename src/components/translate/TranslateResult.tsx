@@ -77,12 +77,6 @@ export default function TranslateResult({ data, loading, error }: Props) {
             lang="en-US"
             size="sm"
           />
-          <AudioButton
-            text={data.exampleTranslation}
-            label="Escuchar en español"
-            lang="es-ES"
-            size="sm"
-          />
         </div>
         <p className="text-sm text-magic-text-light">
           {data.exampleTranslation}
@@ -118,12 +112,6 @@ export default function TranslateResult({ data, loading, error }: Props) {
                 text={def.example}
                 label="Escuchar ejemplo en inglés"
                 lang="en-US"
-                size="sm"
-              />
-              <AudioButton
-                text={def.exampleTranslation}
-                label="Escuchar ejemplo en español"
-                lang="es-ES"
                 size="sm"
               />
             </div>
