@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const NAV_LINKS = [
@@ -17,16 +16,6 @@ export default function Header() {
       <div className="mx-auto flex max-w-5xl items-center justify-between">
         {/* Logo + Title */}
         <a href="/" className="flex items-center gap-3">
-          <Image
-            src="/images/logo/logo.png"
-            alt="Academia Mágica"
-            width={40}
-            height={40}
-            className="object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
           <span className="text-xl font-bold text-white drop-shadow-sm">
             Academia Mágica
           </span>

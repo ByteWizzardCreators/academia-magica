@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import WizardCharacter from "@/components/wizard/WizardCharacter";
 
 const FEATURES = [
   {
@@ -78,7 +77,14 @@ export default function LandingPage() {
         </div>
 
         <div className="relative z-10 flex flex-col items-center gap-6">
-          <WizardCharacter size={200} />
+          <Image
+            src="/images/logo/logo.png"
+            alt="Academia Mágica"
+            width={200}
+            height={200}
+            className="object-contain drop-shadow-[0_0_24px_rgba(255,184,0,0.3)]"
+            priority
+          />
 
           <div className="max-w-3xl">
             <h1 className="text-5xl font-bold leading-tight text-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] sm:text-7xl">
