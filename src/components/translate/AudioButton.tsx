@@ -7,9 +7,10 @@ interface Props {
   audioUrl?: string | null;
   label?: string;
   size?: "sm" | "md";
+  lang?: string;
 }
 
-export default function AudioButton({ text, audioUrl, label, size = "sm" }: Props) {
+export default function AudioButton({ text, audioUrl, label, size = "sm", lang = "en-US" }: Props) {
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -17,32 +18,31 @@ export default function AudioButton({ text, audioUrl, label, size = "sm" }: Prop
     if (playing) return;
     setPlaying(true);
 
-    if (audioUrl) {
-      // Native audio from Free Dictionary API
+    if (audioUrl && lang === "en-US") {
+      // Native audio only available for English
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
       audio.onended = () => setPlaying(false);
       audio.onerror = () => {
-        // Fallback to Web Speech API
         setPlaying(false);
-        speakWithWebSpeech(text);
+        speakWithWebSpeech(text, lang);
       };
       audio.play().catch(() => {
         setPlaying(false);
-        speakWithWebSpeech(text);
+        speakWithWebSpeech(text, lang);
       });
     } else {
-      speakWithWebSpeech(text);
+      speakWithWebSpeech(text, lang);
     }
-  }, [text, audioUrl, playing]);
+  }, [text, audioUrl, playing, lang]);
 
-  const speakWithWebSpeech = (txt: string) => {
+  const speakWithWebSpeech = (txt: string, language: string) => {
     if (!window.speechSynthesis) {
       setPlaying(false);
       return;
     }
     const utterance = new SpeechSynthesisUtterance(txt);
-    utterance.lang = "en-US";
+    utterance.lang = language;
     utterance.rate = 0.9;
     utterance.onend = () => setPlaying(false);
     utterance.onerror = () => setPlaying(false);

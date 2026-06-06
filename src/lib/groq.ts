@@ -29,18 +29,25 @@ Keep language simple and friendly. Use a magical/wizard theme in your explanatio
 function buildPrompt(phrase: string, language: string): string {
   return `Translate the ${language} word/phrase "${phrase}" to English.
 
+IMPORTANT LANGUAGE RULES — Follow EXACTLY:
+- "explanation" and "definition" and "exampleTranslation" MUST be in ${language}
+- "translation", "ipa", "definitionEn", and "example" MUST be in English
+- "example" MUST be a complete sentence in English (not translated)
+- "exampleTranslation" MUST be that same sentence translated to ${language}
+- NEVER put ${language} text in "example" or "definitionEn"
+
 Return ONLY valid JSON with these fields:
 {
   "translation": "the english translation",
   "ipa": "the IPA pronunciation",
   "explanation": "a fun kid-friendly explanation in ${language}",
-  "example": "a simple example sentence in English",
+  "example": "a simple example sentence in ENGLISH (this is CRITICAL — MUST be English)",
   "exampleTranslation": "the example translated to ${language}",
   "definitions": [
     {
       "definition": "a simple definition in ${language} for kids",
-      "definitionEn": "a simple definition in English for kids",
-      "example": "example sentence in English",
+      "definitionEn": "a simple definition in English for kids (this is CRITICAL — MUST be English)",
+      "example": "example sentence in ENGLISH (this is CRITICAL — MUST be English)",
       "exampleTranslation": "example translated to ${language}"
     }
   ]

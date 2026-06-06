@@ -70,10 +70,17 @@ export default function TranslateResult({ data, loading, error }: Props) {
           Ejemplo
         </p>
         <div className="mt-1 flex items-start gap-2">
-          <p className="text-lg text-magic-text">{data.example}</p>
+          <p className="text-lg font-medium text-magic-text">{data.example}</p>
           <AudioButton
             text={data.example}
-            label='Escuchar ejemplo'
+            label="Escuchar en inglés"
+            lang="en-US"
+            size="sm"
+          />
+          <AudioButton
+            text={data.exampleTranslation}
+            label="Escuchar en español"
+            lang="es-ES"
             size="sm"
           />
         </div>
@@ -92,16 +99,31 @@ export default function TranslateResult({ data, loading, error }: Props) {
             <p className="text-sm font-medium text-magic-purple">
               {def.definition}
             </p>
-            <p className="mt-0.5 text-xs italic text-magic-text-light">
-              {def.definitionEn}
-            </p>
+            <div className="mt-1 flex items-start gap-2">
+              <p className="text-xs italic text-magic-text-light">
+                {def.definitionEn}
+              </p>
+              <AudioButton
+                text={def.definitionEn}
+                label="Escuchar definición en inglés"
+                lang="en-US"
+                size="sm"
+              />
+            </div>
             <div className="mt-2 flex items-start gap-2">
               <p className="text-sm text-magic-text">
                 &ldquo;{def.example}&rdquo;
               </p>
               <AudioButton
                 text={def.example}
-                label='Escuchar ejemplo'
+                label="Escuchar ejemplo en inglés"
+                lang="en-US"
+                size="sm"
+              />
+              <AudioButton
+                text={def.exampleTranslation}
+                label="Escuchar ejemplo en español"
+                lang="es-ES"
                 size="sm"
               />
             </div>
