@@ -9,6 +9,7 @@ interface Props {
 
 export default function WizardCharacter({ size = 120 }: Props) {
   const [sparkle, setSparkle] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const triggerSparkle = () => {
     setSparkle(true);
@@ -27,29 +28,14 @@ export default function WizardCharacter({ size = 120 }: Props) {
         <span className="absolute inset-0 animate-ping rounded-full bg-magic-gold/30" />
       )}
 
-      {/* Real image or fallback SVG */}
-      <Image
-        src="/images/wizard/wizard-main.png"
-        alt="Mago"
-        width={size}
-        height={size}
-        className="drop-shadow-lg object-contain"
-        priority
-        onError={(e) => {
-          // Hide image on error, show fallback below
-          (e.target as HTMLImageElement).style.display = "none";
-          const fallback = (e.target as HTMLImageElement)
-            .nextElementSibling as HTMLElement | null;
-          if (fallback) fallback.style.display = "block";
-        }}
-      />
-
-      {/* Fallback SVG when image doesn't exist yet */}
+      {/* SVG fallback — always rendered (fades out when image loads) */}
       <svg
         viewBox="0 0 120 120"
         width={size}
         height={size}
-        className="drop-shadow-lg hidden"
+        className={`absolute drop-shadow-lg transition-opacity duration-500 ${
+          imgLoaded ? "opacity-0" : "opacity-100"
+        }`}
       >
         <rect x="35" y="50" width="50" height="55" rx="10" fill="#4A0E7E" />
         <polygon points="60,5 30,50 90,50" fill="#2D054D" />
@@ -71,6 +57,19 @@ export default function WizardCharacter({ size = 120 }: Props) {
         <ellipse cx="45" cy="105" rx="12" ry="5" fill="#2D054D" />
         <ellipse cx="75" cy="105" rx="12" ry="5" fill="#2D054D" />
       </svg>
+
+      {/* Real image — fades in when loaded */}
+      <Image
+        src="/images/wizard/wizard-main.png"
+        alt="Mago"
+        width={size}
+        height={size}
+        className={`drop-shadow-lg object-contain transition-opacity duration-500 ${
+          imgLoaded ? "opacity-100" : "opacity-0"
+        }`}
+        priority
+        onLoad={() => setImgLoaded(true)}
+      />
     </button>
   );
 }
