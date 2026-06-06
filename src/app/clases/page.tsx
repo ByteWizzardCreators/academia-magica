@@ -3,26 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { TOPICS } from "@/data/vocabulary";
-
-interface TopicProgress {
-  slug: string;
-  correct: number;
-  total: number;
-  level: number;
-}
-
-function loadProgress(): Record<string, TopicProgress> {
-  if (typeof window === "undefined") return {};
-  try {
-    const saved = localStorage.getItem("magic_progress");
-    return saved ? JSON.parse(saved) : {};
-  } catch {
-    return {};
-  }
-}
+import { loadAllProgress } from "@/types/progress";
+import type { TopicProgress } from "@/types/progress";
 
 export default function ClasesPage() {
-  const [progress] = useState<Record<string, TopicProgress>>(loadProgress);
+  const [progress] = useState<Record<string, TopicProgress>>(loadAllProgress);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">

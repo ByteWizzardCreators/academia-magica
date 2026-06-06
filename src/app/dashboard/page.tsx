@@ -3,32 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import { TOPICS } from "@/data/vocabulary";
+import { loadAllProgress } from "@/types/progress";
+import type { TopicProgress } from "@/types/progress";
 
-interface TopicProgress {
-  slug: string;
-  correct: number;
-  total: number;
-  level: number;
-  streak: number;
-}
-
-function loadProgress(): { progress: Record<string, TopicProgress>; maxStreak: number } {
-  if (typeof window === "undefined") return { progress: {}, maxStreak: 0 };
-  try {
-    const saved = localStorage.getItem("magic_progress");
-    const parsed = saved ? (JSON.parse(saved) as Record<string, TopicProgress>) : {};
-    const maxStreak = Object.values(parsed).reduce(
-      (max, p) => Math.max(max, p.streak || 0),
-      0,
-    );
-    return { progress: parsed, maxStreak };
-  } catch {
-    return { progress: {}, maxStreak: 0 };
-  }
+function loadDashboardData(): { progress: Record<string, TopicProgress>; maxStreak: number } {
+  const progress = loadAllProgress();
+  const maxStreak = Object.values(progress).reduce(
+    (max, p) => Math.max(max, p.streak || 0),
+    0,
+  );
+  return { progress, maxStreak };
 }
 
 export default function DashboardPage() {
-  const [{ progress, maxStreak: totalStreak }] = useState(loadProgress);
+  const [{ progress, maxStreak: totalStreak }] = useState(loadDashboardData);
 
   const hasProgress = Object.keys(progress).length > 0;
   const totalCorrect = Object.values(progress).reduce((s, p) => s + p.correct, 0);

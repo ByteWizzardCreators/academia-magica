@@ -8,42 +8,7 @@ import type { Exercise } from "@/types/exercises";
 
 // ─── Progress helpers (localStorage until auth) ───
 
-interface TopicProgress {
-  slug: string;
-  correct: number;
-  total: number;
-  level: number;
-  streak: number;
-}
-
-function loadTopicProgress(topicId: string): { level: number; score: number } {
-  if (typeof window === "undefined") return { level: 1, score: 0 };
-  try {
-    const saved = localStorage.getItem("magic_progress");
-    const prog = saved ? JSON.parse(saved) : {};
-    if (prog[topicId]) {
-      return { level: prog[topicId].level, score: prog[topicId].correct };
-    }
-  } catch {
-    // ignore
-  }
-  return { level: 1, score: 0 };
-}
-
-function saveProgress(progress: Record<string, TopicProgress>) {
-  localStorage.setItem("magic_progress", JSON.stringify(progress));
-}
-
-/** Load full progress object (for saving/merging) */
-function getFullProgress(): Record<string, TopicProgress> {
-  if (typeof window === "undefined") return {};
-  try {
-    const saved = localStorage.getItem("magic_progress");
-    return saved ? JSON.parse(saved) : {};
-  } catch {
-    return {};
-  }
-}
+import { loadAllProgress, saveAllProgress, loadTopicProgress } from "@/types/progress";
 
 // ─── Audio helper ───
 
@@ -181,7 +146,7 @@ export default function TopicPage() {
     setLeveledUp(didLevelUp);
 
     // Save progress
-    const prog = getFullProgress();
+    const prog = loadAllProgress();
     prog[topic!.id] = {
       slug: topic!.id,
       correct: (prog[topic!.id]?.correct ?? 0) + correctCount,
@@ -189,7 +154,7 @@ export default function TopicPage() {
       level: newLevel,
       streak: streak,
     };
-    saveProgress(prog);
+    saveAllProgress(prog);
 
     setMode("result");
   };
