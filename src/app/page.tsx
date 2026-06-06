@@ -91,13 +91,14 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Bottom fade — purple hero → page background */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-magic-bg to-transparent" />
+        {/* Bottom fade — hero image → gradient section */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-magic-purple-dark to-transparent" />
       </section>
 
-      {/* Features / Products Section */}
-      <section className="w-full max-w-5xl px-4 pb-24 pt-20">
-        <div className="grid gap-8 md:grid-cols-3">
+      {/* Features / Products Section — wrapped in purple gradient */}
+      <div className="w-full bg-gradient-to-b from-magic-purple-dark via-magic-purple to-magic-bg">
+        <section className="mx-auto w-full max-w-5xl px-4 pb-24 pt-20">
+          <div className="grid gap-8 md:grid-cols-3">
           {FEATURES.map((feature) => (
             <a
               key={feature.title}
@@ -143,6 +144,10 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+
+      {/* Bottom fade — gradient section → footer */}
+      <div className="h-16 bg-gradient-to-t from-magic-bg to-transparent" />
+      </div>
     </div>
   );
 }
