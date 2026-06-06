@@ -33,11 +33,11 @@ export async function lookupWord(word: string): Promise<DictionaryResult | null>
 function findAudio(phonetics: Array<{ text?: string; audio?: string }> | undefined): string | null {
   if (!phonetics) return null;
 
-  // Prefer US pronunciation (search for "--us" or non-empty audio)
-  const usAudio = phonetics.find((p) => p.audio?.includes("--us"));
+  // Prefer US pronunciation
+  const usAudio = phonetics.find((p) => p.audio?.includes("-us") || p.audio?.includes("_us"));
   if (usAudio?.audio) return usAudio.audio;
 
   // Fallback to any audio
-  const anyAudio = phonetics.find((p) => p.audio);
+  const anyAudio = phonetics.find((p) => p.audio && p.audio.length > 0);
   return anyAudio?.audio || null;
 }
