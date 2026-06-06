@@ -7,7 +7,7 @@ import TranslateForm from "@/components/translate/TranslateForm";
 import TranslateResult from "@/components/translate/TranslateResult";
 import type { TranslateResponse } from "@/lib/groq";
 
-export default function HomeClient() {
+export default function TraductorClient() {
   const [result, setResult] = useState<TranslateResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -35,8 +35,7 @@ export default function HomeClient() {
         <WizardCharacter size={140} />
 
         <h1 className="max-w-2xl text-3xl font-bold leading-tight text-magic-purple sm:text-5xl">
-          Aprendé inglés con
-          <span className="text-magic-gold"> magia</span>
+          Traductor Mágico
         </h1>
 
         <p className="max-w-md text-lg text-magic-text-light">
@@ -46,7 +45,7 @@ export default function HomeClient() {
       </section>
 
       {/* Translate Section */}
-      <section className="mt-10 flex w-full flex-col items-center gap-6">
+      <section className="relative z-10 mt-10 flex w-full flex-col items-center gap-6">
         <TranslateForm
           onResult={(data) => setResult(data as TranslateResponse)}
           onError={(msg) => setError(msg)}
@@ -61,7 +60,7 @@ export default function HomeClient() {
       </section>
 
       {/* Features hint */}
-      <section className="mt-20 grid gap-6 text-center sm:grid-cols-3">
+      <section className="relative z-10 mt-20 grid gap-6 text-center sm:grid-cols-3">
         {[
           {
             icon: "🧙‍♂️",
