@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getExercises } from "@/lib/exercises";
 import { getTopic } from "@/data/vocabulary";
+import type { VocabWord } from "@/data/vocabulary";
 
 export async function POST(request: NextRequest) {
   try {
-    const { topic_id, level = 1, count = 5 } = await request.json();
+    const { topic_id, level = 1, count = 5, words } = await request.json();
 
     if (!topic_id || typeof topic_id !== "string") {
       return NextResponse.json(
@@ -24,7 +25,17 @@ export async function POST(request: NextRequest) {
     const validLevel = Math.min(Math.max(1, Number(level) || 1), 5);
     const validCount = Math.min(Math.max(1, Number(count) || 5), 10);
 
-    const exercises = await getExercises(topic_id, validLevel, validCount);
+    // Optional adaptive pre-selection: keep only vocabulary that belongs
+    // to this topic. Empty/absent input falls back to difficulty filtering.
+    const wordList: string[] = Array.isArray(words)
+      ? words.filter((w: unknown): w is string => typeof w === "string")
+      : [];
+    const requestedWords: VocabWord[] | undefined =
+      wordList.length > 0
+        ? topic.words.filter((w) => wordList.includes(w.english))
+        : undefined;
+
+    const exercises = await getExercises(topic_id, validLevel, validCount, requestedWords);
 
     return NextResponse.json({
       topic: {

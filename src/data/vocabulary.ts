@@ -241,5 +241,14 @@ export function getWordsByDifficulty(topic: TopicData, level: number): VocabWord
   return topic.words.filter((w) => w.difficulty <= level);
 }
 
+/** Find a word by its english spelling across all topics */
+export function getWordByEnglish(english: string): VocabWord | undefined {
+  for (const topic of TOPICS) {
+    const word = topic.words.find((w) => w.english === english);
+    if (word) return word;
+  }
+  return undefined;
+}
+
 /** Total words across all topics */
 export const TOTAL_WORDS = TOPICS.reduce((sum, t) => sum + t.words.length, 0);

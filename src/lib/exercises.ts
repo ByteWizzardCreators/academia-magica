@@ -114,16 +114,20 @@ const generators: Record<
   listening: generateListening,
 };
 
-/** Generate a set of exercises locally (no AI) — fast, reliable, always works */
+/** Generate a set of exercises locally (no AI) — fast, reliable, always works.
+ * When `words` is provided (adaptive selection), exercises target exactly those
+ * vocabulary words; otherwise falls back to the difficulty-based pool. */
 export function generateTemplateExercises(
   topicId: string,
   level: number,
   count: number = 5,
+  words?: VocabWord[],
 ): Exercise[] {
   const topic = getTopic(topicId);
   if (!topic) return [];
 
-  const availableWords = getWordsByDifficulty(topic, level);
+  const requested = words?.filter((w) => topic.words.some((tw) => tw.english === w.english)) ?? [];
+  const availableWords = requested.length > 0 ? requested : getWordsByDifficulty(topic, level);
   if (availableWords.length === 0) return [];
 
   // Pick random words, weighted by difficulty match
@@ -236,15 +240,17 @@ export async function generateAIExercise(
   };
 }
 
-/** Get exercises for a topic/level — tries AI first, falls back to templates */
+/** Get exercises for a topic/level — tries AI first, falls back to templates.
+ * `words` (optional) narrows the exercise pool to pre-selected vocabulary. */
 export async function getExercises(
   topicId: string,
   level: number,
   count: number = 5,
+  words?: VocabWord[],
 ): Promise<Exercise[]> {
   // For now, always use templates (faster, reliable, no rate limit issues)
   // AI generation can be enabled for "premium" exercises later
-  const exercises = generateTemplateExercises(topicId, level, count);
+  const exercises = generateTemplateExercises(topicId, level, count, words);
 
   // Attach topic_id to each exercise
   return exercises.map((ex) => ({ ...ex, topic_id: topicId }));

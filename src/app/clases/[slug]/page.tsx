@@ -2,13 +2,33 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
-import { getTopic } from "@/data/vocabulary";
+import { getTopic, getWordByEnglish } from "@/data/vocabulary";
 import type { VocabWord } from "@/data/vocabulary";
 import type { Exercise } from "@/types/exercises";
 
 // ─── Progress helpers (localStorage until auth) ───
 
-import { loadAllProgress, saveAllProgress, loadTopicProgress } from "@/types/progress";
+import {
+  loadAllProgress,
+  saveAllProgress,
+  loadTopicProgress,
+  createEmptyTopicProgress,
+  getGameState,
+} from "@/types/progress";
+
+// ─── Game mechanics (no AI) ───
+
+import { pickNextWords } from "@/lib/adaptive";
+import {
+  getHint,
+  recordExerciseResult,
+  spendCoins,
+  awardLevelUpCoins,
+  finalizeSession,
+} from "@/lib/gamification";
+import type { Hint } from "@/lib/gamification";
+import { unlockBadges } from "@/lib/badges";
+import type { BadgeDef } from "@/lib/badges";
 
 // ─── Audio helper ───
 
@@ -36,10 +56,8 @@ export default function TopicPage() {
   const slug = params.slug as string;
   const topic = getTopic(slug);
 
-  // Load initial progress from localStorage (lazy init — runs once)
-  const [initialLevel, initialScore] = topic
-    ? [loadTopicProgress(topic.id).level, loadTopicProgress(topic.id).score]
-    : [1, 0];
+  // Load initial level from localStorage (lazy init — runs once)
+  const initialLevel = topic ? loadTopicProgress(topic.id).level : 1;
 
   // Mode
   const [mode, setMode] = useState<Mode>("study");
@@ -51,11 +69,18 @@ export default function TopicPage() {
   const [answer, setAnswer] = useState("");
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
-  const [score, setScore] = useState(initialScore);
+  const [score, setScore] = useState(0); // session correct answers
   const [streak, setStreak] = useState(0);
+  const [peakStreak, setPeakStreak] = useState(0); // best streak within the session
   const [leveledUp, setLeveledUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Game mechanics
+  const [coins, setCoins] = useState(() => getGameState().coins);
+  const [hintOpen, setHintOpen] = useState(false);
+  const [revealedHints, setRevealedHints] = useState<Record<string, number[]>>({});
+  const [newBadges, setNewBadges] = useState<BadgeDef[]>([]);
 
   // Load voices for speech
   useEffect(() => {
@@ -69,10 +94,19 @@ export default function TopicPage() {
     setLoading(true);
     setError(null);
     try {
+      // Adaptive selection: 60/30/10 among gap / strength / explore words
+      const topicProgress = loadAllProgress()[topic.id];
+      const picked = pickNextWords(topic, topicProgress, 5);
+
       const res = await fetch("/api/exercises", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic_id: topic.id, level, count: 5 }),
+        body: JSON.stringify({
+          topic_id: topic.id,
+          level,
+          count: 5,
+          words: picked.map((p) => p.word.english),
+        }),
       });
       if (!res.ok) throw new Error("Error al cargar ejercicios");
       const data = await res.json();
@@ -81,6 +115,8 @@ export default function TopicPage() {
       setAnswer("");
       setSelectedOption(null);
       setFeedback(null);
+      setHintOpen(false);
+      setRevealedHints({});
       setMode("practice");
     } catch {
       setError("No pudimos cargar los ejercicios. ¡Intentalo de nuevo!");
@@ -91,17 +127,32 @@ export default function TopicPage() {
 
   const currentEx = exercises[currentIdx] as Exercise | undefined;
 
-  const handleOptionClick = (option: string) => {
-    if (feedback) return;
-    setSelectedOption(option);
-    const isCorrect = option === currentEx?.correct_answer;
-    setFeedback(isCorrect ? "correct" : "incorrect");
+  // Persist one answered exercise (word mastery, type stats, coins)
+  const recordAnswer = (isCorrect: boolean) => {
+    if (!currentEx || !topic) return;
     if (isCorrect) {
+      const nextStreak = streak + 1;
       setScore((s) => s + 1);
-      setStreak((s) => s + 1);
+      setStreak(nextStreak);
+      setPeakStreak((p) => Math.max(p, nextStreak));
     } else {
       setStreak(0);
     }
+    recordExerciseResult({
+      topicSlug: topic.id,
+      wordEnglish: currentEx.target_word,
+      exerciseType: currentEx.type,
+      correct: isCorrect,
+    });
+    setCoins(getGameState().coins);
+  };
+
+  const handleOptionClick = (option: string) => {
+    if (!currentEx || feedback) return;
+    setSelectedOption(option);
+    const isCorrect = option === currentEx.correct_answer;
+    setFeedback(isCorrect ? "correct" : "incorrect");
+    recordAnswer(isCorrect);
   };
 
   const handleSubmitText = () => {
@@ -109,12 +160,20 @@ export default function TopicPage() {
     const isCorrect =
       answer.trim().toLowerCase() === currentEx.correct_answer.toLowerCase();
     setFeedback(isCorrect ? "correct" : "incorrect");
-    if (isCorrect) {
-      setScore((s) => s + 1);
-      setStreak((s) => s + 1);
-    } else {
-      setStreak(0);
-    }
+    recordAnswer(isCorrect);
+  };
+
+  const buyHint = (hintLevel: 2 | 3) => {
+    if (!currentEx) return;
+    const exWord = getWordByEnglish(currentEx.target_word);
+    if (!exWord) return;
+    const hint = getHint(exWord, hintLevel);
+    if (hint.cost > 0 && !spendCoins(hint.cost)) return;
+    setRevealedHints((prev) => ({
+      ...prev,
+      [currentEx.id]: [...(prev[currentEx.id] ?? []), hintLevel],
+    }));
+    setCoins(getGameState().coins);
   };
 
   const handleNext = () => {
@@ -132,7 +191,7 @@ export default function TopicPage() {
   const finishPractice = () => {
     const totalAttempts = exercises.length;
     const correctCount = score;
-    const pct = Math.round((correctCount / totalAttempts) * 100);
+    const pct = totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 0;
 
     // Level up logic: 80%+ correct → advance
     let newLevel = level;
@@ -145,16 +204,22 @@ export default function TopicPage() {
     setLevel(newLevel);
     setLeveledUp(didLevelUp);
 
-    // Save progress
+    // Save level + session streak (correct/total/words/byType were already
+    // recorded per exercise by recordExerciseResult)
     const prog = loadAllProgress();
-    prog[topic!.id] = {
-      slug: topic!.id,
-      correct: (prog[topic!.id]?.correct ?? 0) + correctCount,
-      total: (prog[topic!.id]?.total ?? 0) + totalAttempts,
-      level: newLevel,
-      streak: streak,
-    };
+    const entry = prog[topic!.id] ?? createEmptyTopicProgress(topic!.id);
+    entry.level = newLevel;
+    entry.streak = streak;
+    prog[topic!.id] = entry;
     saveAllProgress(prog);
+
+    if (didLevelUp) awardLevelUpCoins();
+    finalizeSession(peakStreak);
+    setCoins(getGameState().coins);
+
+    // New achievements → banner on the result screen
+    const unlocked = unlockBadges();
+    if (unlocked.length > 0) setNewBadges(unlocked);
 
     setMode("result");
   };
@@ -181,6 +246,33 @@ export default function TopicPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
+      {/* New badge banner */}
+      {newBadges.length > 0 && (
+        <div className="fixed inset-x-4 top-4 z-50 mx-auto max-w-md">
+          <div className="magic-card flex items-center gap-3 border-2 border-magic-gold/50 p-4 shadow-xl">
+            <div className="flex-1">
+              <p className="text-xs font-bold uppercase tracking-wide text-magic-gold-dark">
+                ¡Logro desbloqueado!
+              </p>
+              <div className="mt-1 space-y-0.5">
+                {newBadges.map((badge) => (
+                  <p key={badge.id} className="font-bold text-magic-purple">
+                    {badge.emoji} {badge.name}
+                  </p>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={() => setNewBadges([])}
+              aria-label="Cerrar aviso de logro"
+              className="rounded-full bg-magic-bg p-2 text-sm text-magic-text-light transition-colors hover:text-magic-purple"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Back link */}
       <button
         onClick={() => router.push("/clases")}
@@ -259,7 +351,12 @@ export default function TopicPage() {
               <span>
                 Ejercicio {currentIdx + 1} de {exercises.length}
               </span>
-              <span>🔥 {streak} seguidas</span>
+              <span className="flex items-center gap-3">
+                <span className="flex items-center gap-1 rounded-full bg-magic-gold/15 px-2.5 py-1 font-bold text-magic-gold-dark">
+                  🪙 {coins}
+                </span>
+                <span>🔥 {streak} seguidas</span>
+              </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-magic-bg-alt">
               <div
@@ -280,6 +377,24 @@ export default function TopicPage() {
           </h3>
 
           <p className="mb-6 text-xl font-semibold">{currentEx.question}</p>
+
+          {/* Hint panel */}
+          <div className="mb-4">
+            <button
+              onClick={() => setHintOpen((open) => !open)}
+              className="rounded-xl border-2 border-magic-gold/40 bg-magic-gold/10 px-4 py-2 text-sm font-bold text-magic-gold-dark transition-all hover:bg-magic-gold/20"
+            >
+              💡 Pista {hintOpen ? "▲" : "▼"}
+            </button>
+            {hintOpen && (
+              <HintPanel
+                exercise={currentEx}
+                coins={coins}
+                revealed={revealedHints[currentEx.id] ?? []}
+                onBuy={buyHint}
+              />
+            )}
+          </div>
 
           {/* Audio button for listening exercises */}
           {currentEx.type === "listening" && (
@@ -415,11 +530,16 @@ export default function TopicPage() {
               </div>
             </div>
 
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-magic-gold-dark">
+              🪙 {coins} monedas
+            </div>
+
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <button
                 onClick={() => {
                   setMode("study");
                   setExercises([]);
+                  setNewBadges([]);
                 }}
                 className="rounded-xl border-2 border-magic-purple/20 px-6 py-2 font-bold text-magic-purple transition-all hover:bg-magic-bg-alt"
               >
@@ -435,6 +555,57 @@ export default function TopicPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Hint Panel component ───
+
+function HintPanel({
+  exercise,
+  coins,
+  revealed,
+  onBuy,
+}: {
+  exercise: Exercise;
+  coins: number;
+  revealed: number[];
+  onBuy: (level: 2 | 3) => void;
+}) {
+  const exWord = getWordByEnglish(exercise.target_word);
+  if (!exWord) return null;
+
+  const hints: Hint[] = [getHint(exWord, 1), getHint(exWord, 2), getHint(exWord, 3)];
+
+  return (
+    <div className="mt-3 space-y-2 rounded-xl bg-magic-bg p-4 text-sm">
+      <p className="text-xs font-bold text-magic-text-light">Pistas disponibles</p>
+      {hints.map((hint, i) => {
+        const level = (i + 1) as 1 | 2 | 3;
+        const isRevealed = level === 1 || revealed.includes(level);
+
+        if (isRevealed) {
+          return (
+            <p key={level} className="flex items-start gap-2 font-medium text-magic-text">
+              <span>💡</span> {hint.text}
+            </p>
+          );
+        }
+
+        const affordable = coins >= hint.cost;
+        return (
+          <div key={level} className="flex items-center justify-between gap-3">
+            <span className="text-magic-text-light">Pista {level}</span>
+            <button
+              onClick={() => onBuy(level as 2 | 3)}
+              disabled={!affordable}
+              className="rounded-lg bg-magic-purple px-3 py-1.5 text-xs font-bold text-white transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {affordable ? `Comprar · ${hint.cost} 🪙` : `Necesitás ${hint.cost} 🪙`}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

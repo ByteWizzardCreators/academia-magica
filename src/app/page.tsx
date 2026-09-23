@@ -23,7 +23,6 @@ const FEATURES = [
     img: null,
     icon: "📊",
     title: "Mi Progreso",
-    status: "Próximamente",
     desc: "Seguí tu avance, estrellas, rachas y logros. Cada día cuenta.",
     cta: "Ver progreso →",
   },

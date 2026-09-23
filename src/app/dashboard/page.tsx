@@ -3,20 +3,34 @@
 import { useState } from "react";
 import Link from "next/link";
 import { TOPICS } from "@/data/vocabulary";
-import { loadAllProgress } from "@/types/progress";
-import type { TopicProgress } from "@/types/progress";
+import { loadAllProgress, getGameState } from "@/types/progress";
+import type { TopicProgress, GameState } from "@/types/progress";
+import { BADGES } from "@/lib/badges";
+import type { BadgeDef } from "@/lib/badges";
 
-function loadDashboardData(): { progress: Record<string, TopicProgress>; maxStreak: number } {
+type SkillKey = "vocabulario" | "escucha" | "construccion";
+
+interface SkillStat {
+  correct: number;
+  total: number;
+}
+
+function loadDashboardData(): {
+  progress: Record<string, TopicProgress>;
+  maxStreak: number;
+  game: GameState;
+} {
   const progress = loadAllProgress();
   const maxStreak = Object.values(progress).reduce(
     (max, p) => Math.max(max, p.streak || 0),
     0,
   );
-  return { progress, maxStreak };
+  const game = getGameState();
+  return { progress, maxStreak, game };
 }
 
 export default function DashboardPage() {
-  const [{ progress, maxStreak: totalStreak }] = useState(loadDashboardData);
+  const [{ progress, maxStreak: totalStreak, game }] = useState(loadDashboardData);
 
   const hasProgress = Object.keys(progress).length > 0;
   const totalCorrect = Object.values(progress).reduce((s, p) => s + p.correct, 0);
@@ -29,6 +43,48 @@ export default function DashboardPage() {
     .map(([s, p]) => ({ ...p, slug: s }))
     .sort((a, b) => (b.total - b.correct) - (a.total - a.correct)) // most to learn
     .find((p) => p.total > 0 && p.correct < p.total)?.slug;
+
+  // ─── Competencia helpers ───
+
+  // Mastery per topic: aggregated from per-word records (attempted words only)
+  const topicMastery = (topicId: string): number => {
+    const topicProgress = progress[topicId];
+    if (!topicProgress) return 0;
+    const words = Object.values(topicProgress.words);
+    if (words.length === 0) return 0;
+    const attempts = words.reduce((sum, w) => sum + w.attempts, 0);
+    const correct = words.reduce((sum, w) => sum + w.correct, 0);
+    return attempts > 0 ? Math.round((correct / attempts) * 100) : 0;
+  };
+
+  // Ability stats, consolidated from byType across all topics
+  const skillStats = Object.values(progress).reduce<Record<SkillKey, SkillStat>>(
+    (acc, p) => {
+      acc.vocabulario.correct += p.byType.multiple_choice.correct + p.byType.translation.correct;
+      acc.vocabulario.total += p.byType.multiple_choice.total + p.byType.translation.total;
+      acc.escucha.correct += p.byType.listening.correct;
+      acc.escucha.total += p.byType.listening.total;
+      acc.construccion.correct += p.byType.sentence_builder.correct;
+      acc.construccion.total += p.byType.sentence_builder.total;
+      return acc;
+    },
+    {
+      vocabulario: { correct: 0, total: 0 },
+      escucha: { correct: 0, total: 0 },
+      construccion: { correct: 0, total: 0 },
+    },
+  );
+
+  const skillMeta: { key: SkillKey; label: string }[] = [
+    { key: "vocabulario", label: "📖 Vocabulario" },
+    { key: "escucha", label: "🎧 Escucha" },
+    { key: "construccion", label: "🧩 Construcción" },
+  ];
+
+  const badgeDefById = new Map(BADGES.map((b) => [b.id, b]));
+  const unlockedBadges = game.badges
+    .map((b) => badgeDefById.get(b.id))
+    .filter((b): b is BadgeDef => Boolean(b));
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -138,6 +194,103 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </Link>
+              );
+            })}
+          </div>
+
+          {/* ─── Competencia section ─── */}
+          <h2 className="mb-4 mt-10 text-lg font-bold text-magic-purple">
+            🏆 Competencia
+          </h2>
+
+          {/* Coins + badges */}
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="magic-card flex items-center gap-3 px-4 py-3">
+              <span className="text-2xl">🪙</span>
+              <div>
+                <div className="text-lg font-bold text-magic-gold-dark">
+                  {game.coins}
+                </div>
+                <div className="text-xs text-magic-text-light">
+                  Monedas · {game.totalCoinsEarned} ganadas
+                </div>
+              </div>
+            </div>
+
+            {unlockedBadges.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {unlockedBadges.map((badge) => (
+                  <span
+                    key={badge.id}
+                    title={badge.desc}
+                    className="magic-card flex cursor-help items-center gap-2 px-3 py-2 text-sm font-bold text-magic-purple"
+                  >
+                    <span className="text-xl">{badge.emoji}</span>
+                    {badge.name}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="magic-card px-4 py-3 text-sm text-magic-text-light">
+                Todavía no desbloqueaste logros. ¡Seguí practicando! ✨
+              </div>
+            )}
+          </div>
+
+          {/* Mastery per topic */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {TOPICS.map((topic) => {
+              const mastery = topicMastery(topic.id);
+              const attempted =
+                Object.keys(progress[topic.id]?.words ?? {}).length > 0;
+              return (
+                <div key={topic.id} className="magic-card flex items-center gap-4 p-4">
+                  <span className="text-3xl">{topic.icon}</span>
+                  <div className="flex-1">
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="font-bold text-magic-purple">
+                        {topic.name}
+                      </span>
+                      {attempted && (
+                        <span className="text-xs text-magic-text-light">
+                          {mastery}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-magic-bg-alt">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-magic-teal to-magic-sky transition-all"
+                        style={{ width: `${mastery}%` }}
+                      />
+                    </div>
+                    <div className="mt-0.5 text-xs text-magic-text-light">
+                      {attempted ? "Dominio" : "Sin datos todavía"}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Ability stats */}
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            {skillMeta.map(({ key, label }) => {
+              const stat = skillStats[key];
+              const pct = stat.total > 0
+                ? Math.round((stat.correct / stat.total) * 100)
+                : 0;
+              return (
+                <div key={key} className="magic-card p-4 text-center">
+                  <div className="text-sm font-bold text-magic-purple">
+                    {label}
+                  </div>
+                  <div className="mt-1 text-xl font-bold text-magic-gold">
+                    {stat.total > 0 ? `${pct}%` : "—"}
+                  </div>
+                  <div className="mt-0.5 text-xs text-magic-text-light">
+                    {stat.correct}/{stat.total}
+                  </div>
+                </div>
               );
             })}
           </div>
