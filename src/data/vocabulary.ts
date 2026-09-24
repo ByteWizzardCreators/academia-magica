@@ -241,6 +241,26 @@ export const TOPICS: TopicData[] = [
       { english: "thank you", spanish: "gracias", ipa: "/ˈθæŋk juː/", difficulty: 1 },
     ],
   },
+  {
+    id: "emociones",
+    name: "Emociones",
+    icon: "😊",
+    description: "Cómo nos sentimos: feliz, triste, enojado y más en inglés",
+    order: 12,
+    words: [
+      { english: "happy", spanish: "feliz", ipa: "/ˈhæpi/", difficulty: 1 },
+      { english: "sad", spanish: "triste", ipa: "/sæd/", difficulty: 1 },
+      { english: "angry", spanish: "enojado", ipa: "/ˈæŋɡri/", difficulty: 2 },
+      { english: "tired", spanish: "cansado", ipa: "/ˈtaɪərd/", difficulty: 2 },
+      { english: "scared", spanish: "asustado", ipa: "/skɛərd/", difficulty: 2 },
+      { english: "hungry", spanish: "hambriento", ipa: "/ˈhʌŋɡri/", difficulty: 2 },
+      { english: "thirsty", spanish: "con sed", ipa: "/ˈθɜːrsti/", difficulty: 3 },
+      { english: "sleepy", spanish: "con sueño", ipa: "/ˈsliːpi/", difficulty: 2 },
+      { english: "excited", spanish: "emocionado", ipa: "/ɪkˈsaɪtɪd/", difficulty: 3 },
+      { english: "surprised", spanish: "sorprendido", ipa: "/sərˈpraɪzd/", difficulty: 3 },
+      { english: "sick", spanish: "enfermo", ipa: "/sɪk/", difficulty: 2 },
+    ],
+  },
 ];
 
 // Helpers
