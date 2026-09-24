@@ -116,17 +116,6 @@ export default function LandingPage() {
                 <h3 className="text-xl font-bold text-magic-purple">
                   {feature.title}
                 </h3>
-                {feature.status && (
-                <span
-                  className={`mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-semibold ${
-                    feature.status === "Ya disponible"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {feature.status}
-                </span>
-                )}
               </div>
 
               <p className="text-sm leading-relaxed text-magic-text-light">
