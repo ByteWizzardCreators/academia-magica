@@ -226,6 +226,21 @@ export const TOPICS: TopicData[] = [
       { english: "scissors", spanish: "tijeras", ipa: "/ˈsɪzərz/", difficulty: 3 },
     ],
   },
+  {
+    id: "saludos",
+    name: "Saludos",
+    icon: "👋",
+    description: "Hello, goodbye, please y thank you — los saludos y cortesías más usados",
+    order: 11,
+    words: [
+      { english: "hello", spanish: "hola", ipa: "/həˈloʊ/", difficulty: 1 },
+      { english: "goodbye", spanish: "adiós", ipa: "/ˌɡʊdˈbaɪ/", difficulty: 1 },
+      { english: "bye", spanish: "chau", ipa: "/baɪ/", difficulty: 1 },
+      { english: "sorry", spanish: "perdón", ipa: "/ˈsɒri/", difficulty: 1 },
+      { english: "please", spanish: "por favor", ipa: "/pliːz/", difficulty: 1 },
+      { english: "thank you", spanish: "gracias", ipa: "/ˈθæŋk juː/", difficulty: 1 },
+    ],
+  },
 ];
 
 // Helpers
