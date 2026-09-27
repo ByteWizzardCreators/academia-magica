@@ -530,7 +530,7 @@ Recompensas actuales que se conservan: **+1 moneda** por respuesta correcta, **+
 | Pista 1 | Primera letra de la palabra en inglés | **0 monedas** |
 | Pista 2 | **Escuchar la palabra** (audio) | **1 moneda** |
 | Pista 3 | **Ejemplo de uso / pista contextual** | **2 monedas** |
-| Traducción | Significado en español | **gratis, siempre disponible** |
+| Traducción | Significado en español | **gratis** (regla contextual «Help ≠ Answer»: nunca revela la respuesta antes de intentar) |
 | Pronunciación escrita | IPA | **gratis, siempre disponible** |
 
 ### Por qué
@@ -550,6 +550,20 @@ Recompensas actuales que se conservan: **+1 moneda** por respuesta correcta, **+
 **7. La función `getHint()` cambia de forma.** Hoy devuelve `{ text, cost }`. La pista 2 necesita **disparar audio**, no mostrar texto, así que el tipo de pista necesita distinguir entre texto, audio y contexto. Es un cambio de contrato pequeño, no una refactorización.
 
 **8. Qué pasa si una palabra no tiene ejemplo.** Con 158 palabras, es probable que al principio falten ejemplos. La regla de degradación: si la palabra no tiene ejemplo curado, la pista 3 cae automáticamente a la pista con IPA. Nunca se muestra una pista vacía ni se cobra por nada.
+
+**9. Help ≠ Answer (principio rector de la ayuda).** Toda pista gratuita debe ayudar al alumno a comprender o continuar el ejercicio **sin revelar directamente la respuesta correcta**. Las ayudas que revelan la respuesta completa se consideran *answer reveal* y se reservan para después de un intento o para una mecánica explícitamente definida. La traducción no se bloquea globalmente — en Study mostrar *cat → gato* está perfecto, ahí no se está respondiendo un ejercicio — la regla es contextual:
+
+| Contexto | Traducción |
+| --- | --- |
+| 📚 Study | 🆓 Sí |
+| 🧩 Ejercicio, antes de intentar | ❌ No si revela la respuesta (`multiple_choice` y `translation`) |
+| 🧩 Ejercicio, ayuda semántica | 🆓 Sí (audio del ejercicio, imagen, contexto) |
+| 🧩 Ejercicio, después de intentar | 🆓 o 🪙 según la ayuda |
+| 📖 Reading | 🆓 ayuda de vocabulario, sin revelar respuestas de comprensión |
+
+Las monedas **nunca son requisito para la ayuda fundamental**: lo que cuesta es la pista que prácticamente resuelve el ejercicio (audio y ejemplo contextual).
+
+**10. Reglas de desbloqueo: un solo pago por ayuda.** Comprar una pista la desbloquea para todo el ejercicio, sin cobros repetidos. Pista 2 — Audio (1 moneda): al desbloquearla, el audio se reproduce automáticamente una vez y queda disponible un botón de repetición sin costo adicional durante ese ejercicio. Pista 3 — Ejemplo contextual (2 monedas): se muestra una vez y queda visible, sin volver a cobrar.
 
 ### Nota de implementación
 
@@ -608,7 +622,7 @@ Antes de tocar la lógica existente, el proyecto necesita una red mínima de pru
 
 1. **Reordenar los temas** con `saludos` en la posición 1 y el orden de la sección 4. El campo `order` ya existe; hoy la lista se dibuja en orden de arreglo y `getTopicByOrder()` no se usa. Como el progreso se indexa por *slug*, **no hay migración de datos**: el progreso de un niño que ya empezó con *animales* se conserva y aparece en su nueva posición.
 2. **Agregar `hi` y `name`** al tema `saludos` y las estructuras `My name is…` / `What's your name?`, sin las cuales la Etapa 0 no tiene contenido suficiente.
-3. **Rediseñar las pistas**: traducción e IPA gratuitos y siempre visibles; pista 2 pasa a ser audio; pista 3 pasa a ser ejemplo contextual. Actualizar el contrato de `getHint()` para distinguir texto, audio y contexto, y agregar la regla de degradación cuando falte el ejemplo.
+3. **Rediseñar las pistas**: traducción e IPA gratuitos, con la traducción sujeta a la regla contextual «Help ≠ Answer» de la sección 8 (no se muestra en `multiple_choice` ni `translation` hasta después de un intento; en Study, `listening` y `sentence_builder` está desde el arranque); pista 2 pasa a ser audio (reproducción automática al comprar + botón de repetición gratis); pista 3 pasa a ser ejemplo contextual (queda visible sin volver a cobrar). Actualizar el contrato de `getHint()` para distinguir texto, audio y contexto, y agregar la regla de degradación cuando falte el ejemplo.
 4. **Verificar que los criterios de los logros siguen funcionando.** Los nueve logros referencian temas por *slug* (`animales`, `colores`, `numeros`, `casa`); como los identificadores no cambian, ninguno se rompe.
 
 *Nota:* este proyecto usa Next.js 16 y React 19, cuyas APIs pueden diferir de versiones anteriores. Quien implemente debe leer la documentación en `node_modules/next/dist/docs/` antes de escribir código.
