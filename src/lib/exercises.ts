@@ -54,6 +54,9 @@ function generateTranslation(word: VocabWord, _all: VocabWord[], index: number):
     return {
       id: `tr-${word.english}-${index}`,
       type: "translation",
+      // Stamped so the "Help ≠ Answer" rule can tell that the answer here IS the
+      // Spanish meaning; without it the free Spanish panel has to be locked.
+      direction: dir,
       difficulty: word.difficulty,
       topic_id: "",
       question: `Escribí "${word.english}" en español`,
@@ -65,6 +68,9 @@ function generateTranslation(word: VocabWord, _all: VocabWord[], index: number):
   return {
     id: `tr-${word.english}-${index}`,
     type: "translation",
+    // The Spanish is already in the question and the answer is the English word,
+    // so showing the Spanish again reveals nothing.
+    direction: dir,
     difficulty: word.difficulty,
     topic_id: "",
     question: `Escribí "${word.spanish}" en inglés`,

@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { TOPICS } from "@/data/vocabulary";
+import { getTopicsInOrder } from "@/data/vocabulary";
 import { loadAllProgress } from "@/types/progress";
 import type { TopicProgress } from "@/types/progress";
 
 export default function ClasesPage() {
   const [progress] = useState<Record<string, TopicProgress>>(loadAllProgress);
+  // The course sequence lives in `order`: greetings first, actions last.
+  const topics = getTopicsInOrder();
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -23,7 +25,7 @@ export default function ClasesPage() {
 
       {/* Topic grid */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {TOPICS.map((topic) => {
+        {topics.map((topic) => {
           const prog = progress[topic.id];
           const pct = prog && prog.total > 0
             ? Math.round((prog.correct / prog.total) * 100)
@@ -81,9 +83,9 @@ export default function ClasesPage() {
 
       {/* Stats footer */}
       <div className="mt-12 text-center text-sm text-magic-text-light">
-        {TOPICS.reduce((sum, t) => sum + t.words.length, 0)} palabras en total
+        {topics.reduce((sum, t) => sum + t.words.length, 0)} palabras en total
         {" · "}
-        {TOPICS.length} temas
+        {topics.length} temas
       </div>
     </div>
   );

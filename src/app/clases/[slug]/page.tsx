@@ -22,6 +22,7 @@ import {
 
 import { pickNextWords } from "@/lib/adaptive";
 import {
+  canShowFreeHelp,
   getHint,
   recordExerciseResult,
   recordReadingResult,
@@ -180,12 +181,16 @@ export default function TopicPage() {
     const exWord = getWordByEnglish(currentEx.target_word);
     if (!exWord) return;
     const hint = getHint(exWord, hintLevel);
+    // A hint that degraded to a free resource is hidden by the panel, so it can
+    // never be bought — and a free hint never deducts a single coin.
     if (hint.cost > 0 && !spendCoins(hint.cost)) return;
     setRevealedHints((prev) => ({
       ...prev,
       [currentEx.id]: [...(prev[currentEx.id] ?? []), hintLevel],
     }));
     setCoins(getGameState().coins);
+    // The listen hint is an action, not a line of text: play it right away.
+    if (hint.kind === "audio") speak(hint.text);
   };
 
   const handleNext = () => {
@@ -421,9 +426,14 @@ export default function TopicPage() {
             </button>
             {hintOpen && (
               <HintPanel
+                key={currentEx.id}
                 exercise={currentEx}
                 coins={coins}
                 revealed={revealedHints[currentEx.id] ?? []}
+                // `feedback` is set the moment the child commits an answer
+                // (option click or submit) and cleared on the next exercise,
+                // which is exactly "at least one attempt".
+                hasAttempted={feedback !== null}
                 onBuy={buyHint}
               />
             )}
@@ -594,30 +604,68 @@ export default function TopicPage() {
 
 // ─── Hint Panel component ───
 
+/**
+ * Asking for help is free: the Spanish meaning and the written pronunciation are
+ * free resources, and only the graduated ladder below is sold (level 3 stays
+ * hidden while the word has no curated example — it would degrade to the free IPA
+ * hint).
+ *
+ * "Help ≠ Answer": the Spanish meaning is locked only when it WOULD hand over the
+ * answer of this very exercise (see `canShowFreeHelp`). While it is locked the
+ * panel says why, without revealing anything, and the pronunciation below stays
+ * available: reading /kæt/ is a decoding aid, never the answer.
+ */
 function HintPanel({
   exercise,
   coins,
   revealed,
+  hasAttempted,
   onBuy,
 }: {
   exercise: Exercise;
   coins: number;
   revealed: number[];
+  hasAttempted: boolean;
   onBuy: (level: 2 | 3) => void;
 }) {
   const exWord = getWordByEnglish(exercise.target_word);
   if (!exWord) return null;
 
   const hints: Hint[] = [getHint(exWord, 1), getHint(exWord, 2), getHint(exWord, 3)];
+  const showTranslation = canShowFreeHelp("translation", exercise, hasAttempted);
 
   return (
     <div className="mt-3 space-y-2 rounded-xl bg-magic-bg p-4 text-sm">
-      <p className="text-xs font-bold text-magic-text-light">Pistas disponibles</p>
+      <p className="text-xs font-bold text-magic-text-light">Ayudas gratis</p>
+      {showTranslation ? (
+        <FreeHelp label="Traducción" value={exWord.spanish} />
+      ) : (
+        <p className="flex items-start gap-2 font-medium text-magic-text">
+          <span>💡</span> Te damos una pista para entenderla, sin decirte la respuesta.
+        </p>
+      )}
+      <FreeHelp label="Pronunciación escrita" value={exWord.ipa} />
+
+      <p className="pt-2 text-xs font-bold text-magic-text-light">Pistas</p>
       {hints.map((hint, i) => {
         const level = (i + 1) as 1 | 2 | 3;
         const isRevealed = level === 1 || revealed.includes(level);
+        // Degraded hint: it fell back to a free resource that is already on top
+        // of this panel, so there is nothing new to show and nothing to sell.
+        if (!isRevealed && hint.cost === 0) return null;
 
         if (isRevealed) {
+          if (hint.kind === "audio") {
+            return (
+              <button
+                key={level}
+                onClick={() => speak(hint.text)}
+                className="flex w-full items-center gap-2 rounded-lg bg-magic-purple/10 px-3 py-1.5 text-left font-medium text-magic-purple transition-all hover:bg-magic-purple/20"
+              >
+                🔊 Escuchá «{hint.text}» — tocá para repetir
+              </button>
+            );
+          }
           return (
             <p key={level} className="flex items-start gap-2 font-medium text-magic-text">
               <span>💡</span> {hint.text}
@@ -628,7 +676,9 @@ function HintPanel({
         const affordable = coins >= hint.cost;
         return (
           <div key={level} className="flex items-center justify-between gap-3">
-            <span className="text-magic-text-light">Pista {level}</span>
+            <span className="text-magic-text-light">
+              {level === 2 ? "Pista 2 · Escuchar" : "Pista 3 · Ejemplo"}
+            </span>
             <button
               onClick={() => onBuy(level as 2 | 3)}
               disabled={!affordable}
@@ -639,6 +689,30 @@ function HintPanel({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/** A free aid, revealed on tap and never charged for. The caller decides
+ *  whether it may be shown at all (see `canShowFreeHelp`). */
+function FreeHelp({ label, value }: { label: string; value: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-magic-text-light">
+        {label} · gratis
+      </span>
+      {open ? (
+        <span className="font-bold text-magic-purple">{value}</span>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="rounded-lg bg-magic-teal/20 px-3 py-1.5 text-xs font-bold text-magic-purple transition-all hover:bg-magic-teal/30"
+        >
+          Ver gratis
+        </button>
+      )}
     </div>
   );
 }

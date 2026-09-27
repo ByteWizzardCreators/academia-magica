@@ -7,6 +7,12 @@ export interface VocabWord {
   spanish: string;
   ipa: string;
   difficulty: 1 | 2 | 3 | 4 | 5;
+  /**
+   * Curated English example sentence, used by the paid contextual hint.
+   * Optional on purpose: while a word has no example the hint degrades to the
+   * free IPA hint instead of charging for nothing. Curated in Fase B.
+   */
+  example?: string;
 }
 
 export interface TopicData {
@@ -14,17 +20,22 @@ export interface TopicData {
   name: string;
   icon: string;
   description: string;
+  /** Position in the course sequence (1-14). See docs/curriculum.md section 4. */
   order: number;
   words: VocabWord[];
 }
 
+// `order` is the pedagogical sequence: greetings open the course, actions close
+// it. The array below deliberately keeps its historical layout, so render the
+// catalogue through `getTopicsInOrder()` — that also leaves the word lookup in
+// `getWordByEnglish()` resolving against the same order as before the reorder.
 export const TOPICS: TopicData[] = [
   {
     id: "animales",
     name: "Animales",
     icon: "🐾",
     description: "Perros, gatos, pájaros y más — los animales más divertidos en inglés",
-    order: 1,
+    order: 5,
     words: [
       { english: "dog", spanish: "perro", ipa: "/dɒɡ/", difficulty: 1 },
       { english: "cat", spanish: "gato", ipa: "/kæt/", difficulty: 1 },
@@ -91,7 +102,7 @@ export const TOPICS: TopicData[] = [
     name: "Comida",
     icon: "🍎",
     description: "Frutas, comidas y bebidas — todo lo que te gusta comer",
-    order: 4,
+    order: 6,
     words: [
       { english: "apple", spanish: "manzana", ipa: "/ˈæpəl/", difficulty: 1 },
       { english: "banana", spanish: "banana", ipa: "/bəˈnænə/", difficulty: 1 },
@@ -114,7 +125,7 @@ export const TOPICS: TopicData[] = [
     name: "Cuerpo",
     icon: "🧍",
     description: "Las partes del cuerpo y la cara en inglés",
-    order: 5,
+    order: 7,
     words: [
       { english: "head", spanish: "cabeza", ipa: "/hɛd/", difficulty: 1 },
       { english: "eye", spanish: "ojo", ipa: "/aɪ/", difficulty: 1 },
@@ -135,7 +146,7 @@ export const TOPICS: TopicData[] = [
     name: "Ropa",
     icon: "👕",
     description: "La ropa que usamos cada día en inglés",
-    order: 6,
+    order: 8,
     words: [
       { english: "shirt", spanish: "camisa", ipa: "/ʃɜːrt/", difficulty: 1 },
       { english: "pants", spanish: "pantalón", ipa: "/pænts/", difficulty: 1 },
@@ -154,7 +165,7 @@ export const TOPICS: TopicData[] = [
     name: "Familia",
     icon: "👨‍👩‍👧‍👦",
     description: "Mamá, papá, hermanos — la familia en inglés",
-    order: 7,
+    order: 4,
     words: [
       { english: "mom", spanish: "mamá", ipa: "/mɒm/", difficulty: 1 },
       { english: "dad", spanish: "papá", ipa: "/dæd/", difficulty: 1 },
@@ -172,7 +183,7 @@ export const TOPICS: TopicData[] = [
     name: "Casa",
     icon: "🏠",
     description: "Los cuartos y cosas de la casa en inglés",
-    order: 8,
+    order: 10,
     words: [
       { english: "door", spanish: "puerta", ipa: "/dɔːr/", difficulty: 1 },
       { english: "window", spanish: "ventana", ipa: "/ˈwɪndoʊ/", difficulty: 1 },
@@ -211,7 +222,7 @@ export const TOPICS: TopicData[] = [
     name: "Escuela",
     icon: "🏫",
     description: "La mochila, los libros y la escuela en inglés",
-    order: 10,
+    order: 11,
     words: [
       { english: "book", spanish: "libro", ipa: "/bʊk/", difficulty: 1 },
       { english: "pencil", spanish: "lápiz", ipa: "/ˈpɛnsɪl/", difficulty: 1 },
@@ -231,7 +242,7 @@ export const TOPICS: TopicData[] = [
     name: "Saludos",
     icon: "👋",
     description: "Hello, goodbye, please y thank you — los saludos y cortesías más usados",
-    order: 11,
+    order: 1,
     words: [
       { english: "hello", spanish: "hola", ipa: "/həˈloʊ/", difficulty: 1 },
       { english: "goodbye", spanish: "adiós", ipa: "/ˌɡʊdˈbaɪ/", difficulty: 1 },
@@ -239,6 +250,8 @@ export const TOPICS: TopicData[] = [
       { english: "sorry", spanish: "perdón", ipa: "/ˈsɒri/", difficulty: 1 },
       { english: "please", spanish: "por favor", ipa: "/pliːz/", difficulty: 1 },
       { english: "thank you", spanish: "gracias", ipa: "/ˈθæŋk juː/", difficulty: 1 },
+      { english: "hi", spanish: "hola", ipa: "/haɪ/", difficulty: 1 },
+      { english: "name", spanish: "nombre", ipa: "/neɪm/", difficulty: 1 },
     ],
   },
   {
@@ -266,7 +279,7 @@ export const TOPICS: TopicData[] = [
     name: "Acciones",
     icon: "🏃",
     description: "Correr, saltar, comer, dormir — lo que hacemos todos los días",
-    order: 13,
+    order: 14,
     words: [
       { english: "run", spanish: "correr", ipa: "/rʌn/", difficulty: 1 },
       { english: "jump", spanish: "saltar", ipa: "/dʒʌmp/", difficulty: 1 },
@@ -287,7 +300,7 @@ export const TOPICS: TopicData[] = [
     name: "Juguetes",
     icon: "🧸",
     description: "La pelota, los muñecos y el barrilete — los juguetes en inglés",
-    order: 14,
+    order: 13,
     words: [
       { english: "ball", spanish: "pelota", ipa: "/bɔːl/", difficulty: 1 },
       { english: "doll", spanish: "muñeca", ipa: "/dɒl/", difficulty: 1 },
@@ -308,6 +321,15 @@ export const TOPICS: TopicData[] = [
 // Helpers
 export function getTopic(slug: string): TopicData | undefined {
   return TOPICS.find((t) => t.id === slug);
+}
+
+/**
+ * The catalogue in course sequence (1-14). Every list the kid navigates renders
+ * this, so the pedagogical order lives in the `order` field and not in the
+ * position of a topic inside the array. Returns a fresh sorted copy.
+ */
+export function getTopicsInOrder(): TopicData[] {
+  return [...TOPICS].sort((a, b) => a.order - b.order);
 }
 
 export function getTopicByOrder(order: number): TopicData | undefined {

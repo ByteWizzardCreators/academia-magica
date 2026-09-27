@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { TOPICS } from "@/data/vocabulary";
+import { getTopicsInOrder } from "@/data/vocabulary";
 import { loadAllProgress, getGameState } from "@/types/progress";
 import type { TopicProgress, GameState } from "@/types/progress";
 import { BADGES } from "@/lib/badges";
@@ -31,6 +31,8 @@ function loadDashboardData(): {
 
 export default function DashboardPage() {
   const [{ progress, maxStreak: totalStreak, game }] = useState(loadDashboardData);
+  // Both topic grids follow the course sequence, not the catalogue layout.
+  const topics = getTopicsInOrder();
 
   const hasProgress = Object.keys(progress).length > 0;
   const readingsDone = game.completedReadings.length;
@@ -154,7 +156,7 @@ export default function DashboardPage() {
             Progreso por tema
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            {TOPICS.map((topic) => {
+            {topics.map((topic) => {
               const prog = progress[topic.id];
               const pct = prog && prog.total > 0
                 ? Math.round((prog.correct / prog.total) * 100)
@@ -254,7 +256,7 @@ export default function DashboardPage() {
 
           {/* Mastery per topic */}
           <div className="grid gap-4 sm:grid-cols-2">
-            {TOPICS.map((topic) => {
+            {topics.map((topic) => {
               const mastery = topicMastery(topic.id);
               const attempted =
                 Object.keys(progress[topic.id]?.words ?? {}).length > 0;
