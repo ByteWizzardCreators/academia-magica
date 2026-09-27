@@ -129,10 +129,19 @@ export function normalizeTopicProgress(raw: Partial<TopicProgress>): TopicProgre
     }
   }
 
+  const total = typeof raw.total === "number" ? raw.total : 0;
+  const rawCorrect = typeof raw.correct === "number" ? raw.correct : 0;
+  // Sessions before commit 67b8be3 double-counted correct answers, so a stored record
+  // can hold more correct answers than attempts and the dashboard rendered percentages
+  // above 100. `total` tracks real attempts and is trusted; `correct` is the inflated
+  // field, so it is clamped down to it. This also collapses a stale `correct` on a
+  // record with no attempts at all.
+  const correct = Math.min(rawCorrect, total);
+
   return {
     slug: typeof raw.slug === "string" ? raw.slug : "",
-    correct: typeof raw.correct === "number" ? raw.correct : 0,
-    total: typeof raw.total === "number" ? raw.total : 0,
+    correct,
+    total,
     level: typeof raw.level === "number" ? raw.level : 1,
     streak: typeof raw.streak === "number" ? raw.streak : 0,
     words,

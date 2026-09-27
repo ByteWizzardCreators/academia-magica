@@ -224,6 +224,53 @@ describe("normalizeTopicProgress — legacy topic data", () => {
   });
 });
 
+describe("normalizeTopicProgress — legacy records with inflated correct counts", () => {
+  // Before commit 67b8be3 a session saved `correct += score` where `score` started
+  // from the already-saved score, so every session double-counted. Those records can
+  // hold more correct answers than attempts, which the dashboard rendered as
+  // "Precisión 200%". `total` tracks real attempts, so it is trusted; `correct` is
+  // the inflated field and gets clamped.
+  it("clamps correct down to total when a legacy record has more correct than attempts", () => {
+    const normalized = normalizeTopicProgress(
+      legacy({ slug: "animales", correct: 12, total: 6, level: 2, streak: 4 }),
+    );
+
+    expect(normalized.correct).toBe(6);
+    expect(normalized.total).toBe(6);
+    // The rest of the record survives the repair untouched
+    expect(normalized.level).toBe(2);
+    expect(normalized.streak).toBe(4);
+  });
+
+  it("clamps correct to zero when the record has no attempts at all", () => {
+    const normalized = normalizeTopicProgress(legacy({ slug: "colores", correct: 5, total: 0 }));
+
+    expect(normalized.correct).toBe(0);
+    expect(normalized.total).toBe(0);
+  });
+
+  it("leaves an untouched zeroed record alone", () => {
+    const normalized = normalizeTopicProgress(legacy({ slug: "colores", correct: 0, total: 0 }));
+
+    expect(normalized.correct).toBe(0);
+    expect(normalized.total).toBe(0);
+  });
+
+  it("does not touch a healthy record where correct is below total", () => {
+    const normalized = normalizeTopicProgress(legacy({ slug: "animales", correct: 17, total: 20 }));
+
+    expect(normalized.correct).toBe(17);
+    expect(normalized.total).toBe(20);
+  });
+
+  it("keeps a perfect record where correct equals total", () => {
+    const normalized = normalizeTopicProgress(legacy({ slug: "animales", correct: 20, total: 20 }));
+
+    expect(normalized.correct).toBe(20);
+    expect(normalized.total).toBe(20);
+  });
+});
+
 describe("loadAllProgress — legacy localStorage data", () => {
   it("returns an empty map when nothing is stored", () => {
     expect(loadAllProgress()).toEqual({});
@@ -237,6 +284,15 @@ describe("loadAllProgress — legacy localStorage data", () => {
     expect(all.animales.correct).toBe(17);
     expect(all.animales.words).toEqual({});
     expect(all.animales.byType).toEqual(createEmptyTopicProgress("animales").byType);
+  });
+
+  it("sanitizes a legacy stored topic whose correct exceeds its total", () => {
+    seedProgress({ animales: { slug: "animales", correct: 12, total: 6, level: 2, streak: 4 } });
+
+    const all = loadAllProgress();
+    expect(all.animales.correct).toBe(6);
+    expect(all.animales.total).toBe(6);
+    expect(all.animales.level).toBe(2);
   });
 
   it("does not throw on corrupted JSON", () => {
@@ -281,6 +337,9 @@ describe("loadTopicProgress", () => {
     const topic = createEmptyTopicProgress("animales");
     topic.level = 4;
     topic.correct = 11;
+    // total must cover correct: a record with more correct answers than attempts is
+    // the legacy double-count corruption, which normalization now clamps
+    topic.total = 15;
     saveAllProgress({ animales: topic });
     expect(loadTopicProgress("animales")).toEqual({ level: 4, score: 11 });
   });

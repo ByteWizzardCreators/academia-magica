@@ -15,6 +15,29 @@ interface SkillStat {
   total: number;
 }
 
+/**
+ * Coins stat card. Rendered in the top stats overview and in the empty state, so a
+ * kid with no activity yet still sees their balance instead of no coins at all.
+ */
+function CoinsStat({
+  coins,
+  totalCoinsEarned,
+}: {
+  coins: number;
+  totalCoinsEarned: number;
+}) {
+  return (
+    <div className="magic-card p-4 text-center">
+      <div className="text-2xl font-bold text-magic-gold-dark">
+        🪙{coins}
+      </div>
+      <div className="text-xs text-magic-text-light">
+        {totalCoinsEarned} ganadas
+      </div>
+    </div>
+  );
+}
+
 function loadDashboardData(): {
   progress: Record<string, TopicProgress>;
   maxStreak: number;
@@ -40,7 +63,11 @@ export default function DashboardPage() {
   const hasActivity = hasProgress || readingsDone > 0;
   const totalCorrect = Object.values(progress).reduce((s, p) => s + p.correct, 0);
   const totalAttempts = Object.values(progress).reduce((s, p) => s + p.total, 0);
-  const overallPct = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
+  // Belt and braces: normalization already clamps every topic record, but a raw
+  // record that reached this point must never render a precision above 100.
+  const overallPct = totalAttempts > 0
+    ? Math.min(100, Math.round((totalCorrect / totalAttempts) * 100))
+    : 0;
   const completedTopics = Object.keys(progress).length;
 
   // Get the topic with the most progress to suggest continuing
@@ -113,6 +140,12 @@ export default function DashboardPage() {
             <p className="mt-2 text-magic-text-light">
               Elegí un tema y practicá para ver tu progreso acá
             </p>
+            <div className="mx-auto mt-6 w-full max-w-xs">
+              <CoinsStat
+                coins={game.coins}
+                totalCoinsEarned={game.totalCoinsEarned}
+              />
+            </div>
             <Link
               href="/clases"
               className="magic-gradient mt-6 inline-block rounded-xl px-8 py-3 font-bold text-white transition-all hover:scale-105"
@@ -124,7 +157,7 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* Stats overview */}
-          <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
             <div className="magic-card p-4 text-center">
               <div className="text-2xl font-bold text-magic-gold">
                 {overallPct}%
@@ -148,6 +181,13 @@ export default function DashboardPage() {
                 🔥{totalStreak}
               </div>
               <div className="text-xs text-magic-text-light">Mejor racha</div>
+            </div>
+            {/* Odd card out: full width on mobile, one of five from sm up */}
+            <div className="col-span-2 sm:col-span-1">
+              <CoinsStat
+                coins={game.coins}
+                totalCoinsEarned={game.totalCoinsEarned}
+              />
             </div>
           </div>
 
@@ -208,20 +248,8 @@ export default function DashboardPage() {
             🏆 Competencia
           </h2>
 
-          {/* Coins + badges */}
+          {/* Readings + badges. Coins live in the top stats overview. */}
           <div className="mb-4 flex flex-wrap items-center gap-3">
-            <div className="magic-card flex items-center gap-3 px-4 py-3">
-              <span className="text-2xl">🪙</span>
-              <div>
-                <div className="text-lg font-bold text-magic-gold-dark">
-                  {game.coins}
-                </div>
-                <div className="text-xs text-magic-text-light">
-                  Monedas · {game.totalCoinsEarned} ganadas
-                </div>
-              </div>
-            </div>
-
             <div className="magic-card flex items-center gap-3 px-4 py-3">
               <span className="text-2xl">📖</span>
               <div>
