@@ -33,12 +33,15 @@ export default function DashboardPage() {
   const [{ progress, maxStreak: totalStreak, game }] = useState(loadDashboardData);
 
   const hasProgress = Object.keys(progress).length > 0;
+  const readingsDone = game.completedReadings.length;
+  // Reading a story is progress too, even before the first exercise
+  const hasActivity = hasProgress || readingsDone > 0;
   const totalCorrect = Object.values(progress).reduce((s, p) => s + p.correct, 0);
   const totalAttempts = Object.values(progress).reduce((s, p) => s + p.total, 0);
   const overallPct = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
   const completedTopics = Object.keys(progress).length;
 
-    // Get the topic with the most progress to suggest continuing
+  // Get the topic with the most progress to suggest continuing
   const suggestedTopic = Object.entries(progress)
     .map(([s, p]) => ({ ...p, slug: s }))
     .sort((a, b) => (b.total - b.correct) - (a.total - a.correct)) // most to learn
@@ -92,12 +95,12 @@ export default function DashboardPage() {
         📊 Mi Progreso
       </h1>
       <p className="mb-10 text-center text-magic-text-light">
-        {hasProgress
+        {hasActivity
           ? "Seguí mejorando día a día"
           : "Todavía no hiciste ejercicios. ¡Empezá con una clase!"}
       </p>
 
-      {!hasProgress ? (
+      {!hasActivity ? (
         /* Empty state */
         <div className="magic-card text-center">
           <div className="p-12">
@@ -213,6 +216,18 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-xs text-magic-text-light">
                   Monedas · {game.totalCoinsEarned} ganadas
+                </div>
+              </div>
+            </div>
+
+            <div className="magic-card flex items-center gap-3 px-4 py-3">
+              <span className="text-2xl">📖</span>
+              <div>
+                <div className="text-lg font-bold text-magic-purple">
+                  {readingsDone}
+                </div>
+                <div className="text-xs text-magic-text-light">
+                  Historias leídas
                 </div>
               </div>
             </div>

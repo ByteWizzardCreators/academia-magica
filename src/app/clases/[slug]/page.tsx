@@ -1,10 +1,12 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { getTopic, getWordByEnglish } from "@/data/vocabulary";
-import type { VocabWord } from "@/data/vocabulary";
+import type { TopicData, VocabWord } from "@/data/vocabulary";
 import type { Exercise } from "@/types/exercises";
+import { getReadingsByTopic } from "@/data/readings";
+import type { Reading } from "@/data/readings";
 
 // ─── Progress helpers (localStorage until auth) ───
 
@@ -22,11 +24,12 @@ import { pickNextWords } from "@/lib/adaptive";
 import {
   getHint,
   recordExerciseResult,
+  recordReadingResult,
   spendCoins,
   awardLevelUpCoins,
   finalizeSession,
 } from "@/lib/gamification";
-import type { Hint } from "@/lib/gamification";
+import type { Hint, ReadingReward } from "@/lib/gamification";
 import { unlockBadges } from "@/lib/badges";
 import type { BadgeDef } from "@/lib/badges";
 
@@ -48,7 +51,7 @@ function speak(text: string) {
 
 // ─── Modes ───
 
-type Mode = "study" | "practice" | "result";
+type Mode = "study" | "practice" | "reading" | "result";
 
 export default function TopicPage() {
   const params = useParams();
@@ -81,6 +84,15 @@ export default function TopicPage() {
   const [hintOpen, setHintOpen] = useState(false);
   const [revealedHints, setRevealedHints] = useState<Record<string, number[]>>({});
   const [newBadges, setNewBadges] = useState<BadgeDef[]>([]);
+
+  // Magic reading (Lectura Mágica) — texts available for this topic
+  const readings = useMemo(
+    () => (topic ? getReadingsByTopic(topic.id) : []),
+    [topic],
+  );
+  const [completedReadings, setCompletedReadings] = useState<string[]>(
+    () => getGameState().completedReadings,
+  );
 
   // Load voices for speech
   useEffect(() => {
@@ -330,7 +342,15 @@ export default function TopicPage() {
             ))}
           </div>
 
-          <div className="mt-8 text-center">
+          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            {readings.length > 0 && (
+              <button
+                onClick={() => setMode("reading")}
+                className="magic-gradient rounded-2xl px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:scale-105"
+              >
+                📖 Leer historia
+              </button>
+            )}
             <button
               onClick={loadExercises}
               disabled={loading}
@@ -340,6 +360,19 @@ export default function TopicPage() {
             </button>
           </div>
         </>
+      )}
+
+      {/* ─── READING MODE (Lectura Mágica) ─── */}
+      {mode === "reading" && (
+        <ReadingFlow
+          topic={topic}
+          readings={readings}
+          coins={coins}
+          completedReadings={completedReadings}
+          onCoinsChange={() => setCoins(getGameState().coins)}
+          onCompletedChange={() => setCompletedReadings(getGameState().completedReadings)}
+          onBackToStudy={() => setMode("study")}
+        />
       )}
 
       {/* ─── PRACTICE MODE ─── */}
@@ -665,5 +698,390 @@ function WordCard({ word }: { word: VocabWord }) {
         🔈
       </button>
     </div>
+  );
+}
+
+// ─── Magic reading (Lectura Mágica) ───
+
+/** picker → text → questions → done */
+type ReadingStage = "picker" | "text" | "questions" | "done";
+
+function ReadingFlow({
+  topic,
+  readings,
+  coins,
+  completedReadings,
+  onCoinsChange,
+  onCompletedChange,
+  onBackToStudy,
+}: {
+  topic: TopicData;
+  readings: Reading[];
+  coins: number;
+  completedReadings: string[];
+  onCoinsChange: () => void;
+  onCompletedChange: () => void;
+  onBackToStudy: () => void;
+}) {
+  const [stage, setStage] = useState<ReadingStage>("picker");
+  const [reading, setReading] = useState<Reading | null>(null);
+  const [questionIdx, setQuestionIdx] = useState(0);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [reward, setReward] = useState<ReadingReward | null>(null);
+
+  const readingsLabel =
+    readings.length === 1 ? "1 historia" : `${readings.length} historias`;
+
+  const resetAnswers = () => {
+    setQuestionIdx(0);
+    setSelectedOption(null);
+    setFeedback(null);
+    setCorrectCount(0);
+  };
+
+  const openReading = (target: Reading) => {
+    setReading(target);
+    setReward(null);
+    resetAnswers();
+    setStage("text");
+  };
+
+  const backToPicker = () => {
+    setReading(null);
+    setReward(null);
+    resetAnswers();
+    setStage("picker");
+  };
+
+  const startQuestions = () => {
+    resetAnswers();
+    setStage("questions");
+  };
+
+  const currentQuestion = reading?.questions[questionIdx];
+
+  const handleReadingOption = (option: string) => {
+    if (!currentQuestion || feedback) return;
+    setSelectedOption(option);
+    const isCorrect = option === currentQuestion.correctAnswer;
+    setFeedback(isCorrect ? "correct" : "incorrect");
+    if (isCorrect) setCorrectCount((c) => c + 1);
+  };
+
+  const finishReading = () => {
+    if (!reading) return;
+    // Coins + completion marking live in the gamification layer.
+    const result = recordReadingResult({
+      readingId: reading.id,
+      correctAnswers: correctCount,
+    });
+    setReward(result);
+    onCompletedChange();
+    onCoinsChange();
+    setStage("done");
+  };
+
+  const handleReadingNext = () => {
+    if (!reading) return;
+    const isLast = questionIdx >= reading.questions.length - 1;
+    if (isLast) {
+      finishReading();
+      return;
+    }
+    setQuestionIdx((i) => i + 1);
+    setSelectedOption(null);
+    setFeedback(null);
+  };
+
+  // No texts for this topic (yet) — friendly empty state
+  if (readings.length === 0) {
+    return (
+      <div className="magic-card text-center">
+        <div className="p-10">
+          <span className="text-6xl">📚</span>
+          <h2 className="mt-4 text-xl font-bold text-magic-purple">
+            Todavía no hay historias
+          </h2>
+          <p className="mt-2 text-magic-text-light">
+            Para {topic.name} todavía no escribimos una historia. ¡Pronto vas a
+            poder leerla acá!
+          </p>
+          <button
+            onClick={onBackToStudy}
+            className="magic-gradient mt-6 rounded-xl px-6 py-3 font-bold text-white transition-all hover:scale-105"
+          >
+            📖 Volver a estudiar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Header — English title when a text is open */}
+      <div className="mb-6 text-center">
+        <h2 className="text-xl font-bold text-magic-purple">
+          {reading ? `${reading.icon} ${reading.title}` : "📖 Lectura Mágica"}
+        </h2>
+        <p className="text-sm text-magic-text-light">
+          {topic.name} · {readingsLabel}
+        </p>
+      </div>
+
+      {/* ─── Picker ─── */}
+      {stage === "picker" && (
+        <>
+          <div className="grid gap-3">
+            {readings.map((r) => (
+              <ReadingCard
+                key={r.id}
+                reading={r}
+                completed={completedReadings.includes(r.id)}
+                onOpen={() => openReading(r)}
+              />
+            ))}
+          </div>
+          <div className="mt-6 text-center">
+            <button
+              onClick={onBackToStudy}
+              className="rounded-xl border-2 border-magic-purple/20 px-6 py-2 font-bold text-magic-purple transition-all hover:bg-magic-bg-alt"
+            >
+              ← Volver a estudiar
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ─── Text ─── */}
+      {stage === "text" && reading && (
+        <>
+          <div className="magic-card space-y-4 p-6">
+            {reading.paragraphs.map((paragraph, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <p className="flex-1 text-lg leading-relaxed text-magic-text">
+                  {paragraph}
+                </p>
+                <button
+                  onClick={() => speak(paragraph)}
+                  aria-label={`Escuchar el párrafo ${i + 1}`}
+                  className="rounded-full bg-magic-bg-alt p-2 text-sm transition-colors hover:bg-magic-purple/10"
+                >
+                  🔊
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <button
+              onClick={backToPicker}
+              className="rounded-xl border-2 border-magic-purple/20 px-6 py-3 font-bold text-magic-purple transition-all hover:bg-magic-bg-alt"
+            >
+              ← Volver
+            </button>
+            <button
+              onClick={startQuestions}
+              className="magic-gradient rounded-2xl px-8 py-3 font-bold text-white shadow-lg transition-all hover:scale-105"
+            >
+              Empezar preguntas →
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ─── Questions ─── */}
+      {stage === "questions" && reading && currentQuestion && (
+        <div className="magic-card p-6">
+          <div className="mb-6">
+            <div className="mb-1 flex items-center justify-between text-xs text-magic-text-light">
+              <span>
+                Pregunta {questionIdx + 1} de {reading.questions.length}
+              </span>
+              <span className="flex items-center gap-1 rounded-full bg-magic-gold/15 px-2.5 py-1 font-bold text-magic-gold-dark">
+                🪙 {coins}
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-magic-bg-alt">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-magic-purple to-magic-gold transition-all"
+                style={{
+                  width: `${((questionIdx + 1) / reading.questions.length) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+
+          <h3 className="mb-2 text-lg font-bold text-magic-purple">
+            🤔 Leé y respondé
+          </h3>
+          <p className="mb-6 text-xl font-semibold">{currentQuestion.question}</p>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {currentQuestion.options.map((option, i) => {
+              const isSelected = selectedOption === option;
+              const isCorrectOption = option === currentQuestion.correctAnswer;
+              let bg = "bg-white border-magic-bg-alt hover:border-magic-purple/30";
+              if (feedback) {
+                if (isCorrectOption) bg = "bg-green-50 border-green-400";
+                else if (isSelected) bg = "bg-red-50 border-red-400";
+                else bg = "bg-gray-50 border-gray-200 opacity-50";
+              }
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleReadingOption(option)}
+                  disabled={!!feedback}
+                  className={`rounded-xl border-2 px-4 py-3 text-left font-medium transition-all ${bg}`}
+                >
+                  <span className="mr-2 text-magic-text-light">
+                    {String.fromCharCode(65 + i)}.
+                  </span>
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+
+          {feedback && (
+            <div
+              className={`mt-6 rounded-xl p-4 ${
+                feedback === "correct"
+                  ? "bg-green-50 text-green-800"
+                  : "bg-red-50 text-red-800"
+              }`}
+            >
+              <p className="font-bold">
+                {feedback === "correct" ? "✅ ¡Correcto!" : "❌ ¡Casi!"}
+              </p>
+              <p className="mt-1 text-sm">
+                {feedback === "correct"
+                  ? currentQuestion.explanation
+                  : `La respuesta correcta era: "${currentQuestion.correctAnswer}". ${currentQuestion.explanation}`}
+              </p>
+
+              <button
+                onClick={handleReadingNext}
+                className="mt-3 rounded-lg bg-white px-5 py-2 text-sm font-bold shadow-sm transition-all hover:shadow-md"
+              >
+                {questionIdx < reading.questions.length - 1
+                  ? "Siguiente →"
+                  : "Ver resultado 🎉"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Done ─── */}
+      {stage === "done" && reading && (
+        <div className="magic-card text-center">
+          <div className="p-8">
+            <span className="text-6xl">🎉</span>
+            <h2 className="mt-4 text-2xl font-bold text-magic-purple">
+              ¡Historia leída!
+            </h2>
+            <p className="mt-1 text-magic-text-light">
+              {reading.icon} {reading.title}
+            </p>
+
+            <div className="mx-auto mt-6 flex max-w-xs justify-center gap-8">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-magic-gold">
+                  {correctCount}/{reading.questions.length}
+                </div>
+                <div className="text-xs text-magic-text-light">Correctas</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-magic-purple-light">
+                  +{reward?.earned ?? 0}
+                </div>
+                <div className="text-xs text-magic-text-light">Monedas</div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-magic-gold-dark">
+              🪙 {coins} monedas
+            </div>
+
+            {reward && !reward.firstTime && (
+              <p className="mt-3 text-sm text-magic-text-light">
+                ¡La leíste de nuevo! Por eso el bonus fue solo de las respuestas
+                correctas.
+              </p>
+            )}
+
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <button
+                onClick={onBackToStudy}
+                className="rounded-xl border-2 border-magic-purple/20 px-6 py-2 font-bold text-magic-purple transition-all hover:bg-magic-bg-alt"
+              >
+                Volver a estudiar
+              </button>
+              <button
+                onClick={backToPicker}
+                className="magic-gradient rounded-xl px-6 py-2 font-bold text-white transition-all hover:scale-105"
+              >
+                📖 Leer otra historia
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── Reading Card component ───
+
+function ReadingCard({
+  reading,
+  completed,
+  onOpen,
+}: {
+  reading: Reading;
+  completed: boolean;
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      onClick={onOpen}
+      className="magic-card flex w-full items-center gap-4 p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg"
+    >
+      <span className="text-4xl">{reading.icon}</span>
+
+      <div className="flex-1">
+        <p className="text-lg font-bold text-magic-purple">{reading.title}</p>
+        {reading.hint && (
+          <p className="text-xs text-magic-text-light">{reading.hint}</p>
+        )}
+        <div className="mt-1.5 flex items-center gap-2">
+          {/* Level dots */}
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((l) => (
+              <div
+                key={l}
+                className={`h-1.5 w-1.5 rounded-full ${
+                  l <= reading.level ? "bg-magic-gold" : "bg-gray-200"
+                }`}
+              />
+            ))}
+          </div>
+          <span className="text-xs text-magic-text-light">
+            Nivel {reading.level} · {reading.questions.length} preguntas
+          </span>
+        </div>
+      </div>
+
+      {completed ? (
+        <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-bold text-green-700">
+          ✓ leída
+        </span>
+      ) : (
+        <span className="text-sm text-magic-text-light">Tocá para leer →</span>
+      )}
+    </button>
   );
 }

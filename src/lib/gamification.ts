@@ -7,6 +7,7 @@ import {
   createEmptyTopicProgress,
   getGameState,
   loadAllProgress,
+  markReadingCompleted,
   saveAllProgress,
   saveGameState,
   updateTopicWordResult,
@@ -19,6 +20,8 @@ export interface Hint {
 
 const CORRECT_ANSWER_REWARD = 1;
 const LEVEL_UP_REWARD = 3;
+const READING_CORRECT_REWARD = 1;
+const READING_COMPLETE_REWARD = 2;
 
 /**
  * Graduated hints:
@@ -107,4 +110,30 @@ export function finalizeSession(sessionBestStreak: number): void {
   state.bestStreak = Math.max(state.bestStreak, sessionBestStreak);
   state.lastSessionDate = new Date().toISOString().slice(0, 10);
   saveGameState(state);
+}
+
+// ─── Magic reading (Lectura Mágica) ───
+
+export interface ReadingReward {
+  /** Coins added by this reading session. */
+  earned: number;
+  /** True when the kid had never finished this reading before. */
+  firstTime: boolean;
+}
+
+/**
+ * Finish a magic reading: mark it as completed (deduped) and pay the coins.
+ * +1 coin per correct question, plus a +2 coin bonus the first time only —
+ * so kids can re-read a story to practice without farming the bonus.
+ */
+export function recordReadingResult(input: {
+  readingId: string;
+  correctAnswers: number;
+}): ReadingReward {
+  const firstTime = markReadingCompleted(input.readingId);
+  const earned =
+    input.correctAnswers * READING_CORRECT_REWARD +
+    (firstTime ? READING_COMPLETE_REWARD : 0);
+  if (earned > 0) addCoins(earned);
+  return { earned, firstTime };
 }

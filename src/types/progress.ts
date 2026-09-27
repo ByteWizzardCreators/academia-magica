@@ -48,6 +48,8 @@ export interface GameState {
   totalCorrect: number;
   bestStreak: number;
   lastSessionDate: string | null;
+  /** Ids (slugs) of the magic readings the kid already finished */
+  completedReadings: string[];
 }
 
 const STORAGE_KEY = "magic_progress";
@@ -83,6 +85,7 @@ export function getDefaultGameState(): GameState {
     totalCorrect: 0,
     bestStreak: 0,
     lastSessionDate: null,
+    completedReadings: [],
   };
 }
 
@@ -187,6 +190,9 @@ export function getGameState(): GameState {
       totalCorrect: typeof raw.totalCorrect === "number" ? raw.totalCorrect : 0,
       bestStreak: typeof raw.bestStreak === "number" ? raw.bestStreak : 0,
       lastSessionDate: typeof raw.lastSessionDate === "string" ? raw.lastSessionDate : null,
+      completedReadings: Array.isArray(raw.completedReadings)
+        ? raw.completedReadings.filter((id): id is string => typeof id === "string")
+        : [],
     };
   } catch {
     return getDefaultGameState();
@@ -199,6 +205,18 @@ export function saveGameState(state: GameState) {
   } catch {
     // Ignore storage errors (private mode, quota) — game state is best-effort.
   }
+}
+
+/**
+ * Mark a magic reading as completed. Idempotent: a reading already in the list
+ * is not duplicated. Returns true when this call completed it for the first time.
+ */
+export function markReadingCompleted(readingId: string): boolean {
+  const state = getGameState();
+  if (state.completedReadings.includes(readingId)) return false;
+  state.completedReadings = [...state.completedReadings, readingId];
+  saveGameState(state);
+  return true;
 }
 
 /** Apply one exercise result to the topic's word mastery + type stats. In-place. */
